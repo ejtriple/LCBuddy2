@@ -1,4 +1,3 @@
-import InputTracking from '#/client/InputTracking.js';
 import { CanvasEnabledKeys, KeyCodes } from '#/client/KeyCodes.js';
 
 import { canvas, canvas2d } from '#/graphics/Canvas.js';
@@ -313,10 +312,6 @@ export default abstract class GameShell {
             this.nextMouseClickButton = 1;
             this.mouseButton = 1;
         }
-
-        if (InputTracking.active) {
-            InputTracking.mousePressed(x, y, e.button, 'mouse');
-        }
     }
 
     private onpointerdown(e: PointerEvent) {
@@ -341,10 +336,6 @@ export default abstract class GameShell {
     protected mouseUp(x: number, y: number, e: MouseEvent) {
         this.idleTimer = performance.now();
         this.mouseButton = 0;
-
-        if (InputTracking.active) {
-            InputTracking.mouseReleased(e.button, 'mouse');
-        }
 
         // custom: up event comes before and potentially without move event
         this.mouseX = x;
@@ -373,10 +364,6 @@ export default abstract class GameShell {
     protected pointerEnter(x: number, y: number, _e: PointerEvent) {
         this.mouseX = x;
         this.mouseY = y;
-
-        if (InputTracking.active) {
-            InputTracking.mouseEntered();
-        }
     }
 
     private onpointerleave(e: PointerEvent) {
@@ -387,10 +374,6 @@ export default abstract class GameShell {
         this.idleTimer = performance.now();
         this.mouseX = -1;
         this.mouseY = -1;
-
-        if (InputTracking.active) {
-            InputTracking.mouseExited();
-        }
 
         // custom: moving off-canvas may have a stuck mouse event
         this.nextMouseClickX = -1;
@@ -413,10 +396,6 @@ export default abstract class GameShell {
         this.idleTimer = performance.now();
         this.mouseX = x;
         this.mouseY = y;
-
-        if (InputTracking.active) {
-            InputTracking.mouseMoved(x, y, e.pointerType);
-        }
     }
 
     protected windowMouseUp(e: MouseEvent) {
@@ -464,10 +443,6 @@ export default abstract class GameShell {
             this.keyQueueWritePos = (this.keyQueueWritePos + 1) & 0x7f;
         }
 
-        if (InputTracking.active) {
-            InputTracking.keyPressed(ch);
-        }
-
         if (!CanvasEnabledKeys.includes(e.key)) {
             e.preventDefault();
         }
@@ -501,10 +476,6 @@ export default abstract class GameShell {
             this.keyHeld[ch] = 0;
         }
 
-        if (InputTracking.active) {
-            InputTracking.keyReleased(ch);
-        }
-
         if (!CanvasEnabledKeys.includes(e.key)) {
             e.preventDefault();
         }
@@ -523,10 +494,6 @@ export default abstract class GameShell {
         this.focus = true;
         this.redrawScreen = true;
         this.refresh();
-
-        if (InputTracking.active) {
-            InputTracking.focusGained();
-        }
     }
 
     private onblur(_e: FocusEvent) {
@@ -535,10 +502,6 @@ export default abstract class GameShell {
         // custom: taken from later version to release all keys
         for (let i = 0; i < 128; i++) {
             this.keyHeld[i] = 0;
-        }
-
-        if (InputTracking.active) {
-            InputTracking.focusLost();
         }
     }
 

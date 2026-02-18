@@ -3,7 +3,6 @@ import { stopMidi, setMidiVolume, playMidi } from '#3rdparty/tinymidipcm.js';
 
 import { ClientCode } from '#/client/ClientCode.js';
 import GameShell from '#/client/GameShell.js';
-import InputTracking from '#/client/InputTracking.js';
 import { MiniMenuAction } from '#/client/MiniMenuAction.js';
 import MobileKeyboard from '#/client/MobileKeyboard.js';
 import MouseTracking from '#/client/MouseTracking.js';
@@ -2018,7 +2017,6 @@ export class Client extends GameShell {
                 this.staffmodlevel = await this.stream.read();
                 this.mouseTracked = (await this.stream.read()) === 1;
 
-                InputTracking.deactivate();
                 this.prevMouseClickTime = 0;
                 this.mouseTrackedDelta = 0;
                 this.mouseTracking.length = 0;
@@ -2431,14 +2429,6 @@ export class Client extends GameShell {
         this.locChangeDoQueue();
         await this.soundsDoQueue();
 
-        const tracking: Packet | null = InputTracking.flush();
-        if (tracking) {
-            this.out.pIsaac(ClientProt.EVENT_TRACKING);
-            this.out.p2(tracking.pos);
-            this.out.pdata(tracking.data, tracking.pos, 0);
-            tracking.release();
-        }
-
         if (now - this.timeoutTimer > 15_000) {
             // no packets received recently, connection lost
             await this.lostCon();
@@ -2707,7 +2697,6 @@ export class Client extends GameShell {
         this.loginUser = '';
         this.loginPass = '';
 
-        InputTracking.deactivate();
         this.clearCaches();
         this.world?.resetMap();
 
@@ -6634,26 +6623,6 @@ export class Client extends GameShell {
             if (this.ptype === ServerProt.PLAYER_INFO) {
                 this.getPlayerPos(this.in, this.psize);
                 this.awaitingPlayerInfo = false;
-
-                this.ptype = -1;
-                return true;
-            }
-
-            if (this.ptype === ServerProt.FINISH_TRACKING) {
-                const tracking: Packet | null = InputTracking.stop();
-                if (tracking) {
-                    this.out.pIsaac(ClientProt.EVENT_TRACKING);
-                    this.out.p2(tracking.pos);
-                    this.out.pdata(tracking.data, tracking.pos, 0);
-                    tracking.release();
-                }
-
-                this.ptype = -1;
-                return true;
-            }
-
-            if (this.ptype === ServerProt.ENABLE_TRACKING) {
-                InputTracking.activate();
 
                 this.ptype = -1;
                 return true;
@@ -11873,10 +11842,6 @@ export class Client extends GameShell {
         this.idleTimer = performance.now();
         this.mouseButton = 0;
 
-        if (InputTracking.active) {
-            InputTracking.mouseReleased(e.button, 'mouse');
-        }
-
         // custom: up event comes before and potentially without move event
         this.mouseX = x;
         this.mouseY = y;
@@ -11903,10 +11868,6 @@ export class Client extends GameShell {
                 this.nextMouseClickY = -1;
                 this.nextMouseClickButton = 0;
                 this.mouseButton = 0;
-
-                if (InputTracking.active) {
-                    InputTracking.mouseReleased(0, e.pointerType);
-                }
             } else if (this.panning) {
                 // ignore up events if the player was moving the camera in the viewport
                 this.panning = false;
@@ -11941,17 +11902,9 @@ export class Client extends GameShell {
                     this.mouseButton = 1;
                 }
 
-                if (InputTracking.active) {
-                    InputTracking.mousePressed(x, y, longPress ? 2 : 0, e.pointerType);
-                }
-
                 // release after a client cycle has passed
                 setTimeout(() => {
                     this.mouseButton = 0;
-
-                    if (InputTracking.active) {
-                        InputTracking.mouseReleased(longPress ? 2 : 0, e.pointerType);
-                    }
                 }, 40);
             }
         }
@@ -11961,10 +11914,6 @@ export class Client extends GameShell {
         if (e.pointerType === 'mouse') {
             this.mouseX = x;
             this.mouseY = y;
-
-            if (InputTracking.active) {
-                InputTracking.mouseEntered();
-            }
         } else {
             // custom: touchscreen support
 
@@ -11991,10 +11940,6 @@ export class Client extends GameShell {
             this.mouseX = -1;
             this.mouseY = -1;
 
-            if (InputTracking.active) {
-                InputTracking.mouseExited();
-            }
-
             // custom: moving off-canvas may have a stuck mouse event
             this.nextMouseClickX = -1;
             this.nextMouseClickY = -1;
@@ -12017,10 +11962,6 @@ export class Client extends GameShell {
             this.idleTimer = performance.now();
             this.mouseX = x;
             this.mouseY = y;
-
-            if (InputTracking.active) {
-                InputTracking.mouseMoved(x, y, e.pointerType);
-            }
         } else {
             // custom: touchscreen support
             this.idleTimer = performance.now();

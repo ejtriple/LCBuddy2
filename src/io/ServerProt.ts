@@ -40,10 +40,6 @@ export const enum ServerProt {
     NPC_INFO = 123,
     PLAYER_INFO = 87,
 
-    // input tracking
-    FINISH_TRACKING = 29,
-    ENABLE_TRACKING = 251,
-
     // social
     MESSAGE_GAME = 73,
     UPDATE_IGNORELIST = 63,

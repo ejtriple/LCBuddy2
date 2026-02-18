@@ -5,7 +5,6 @@ export const enum ClientProt {
     EVENT_MOUSE_CLICK = 234, // index: 31
     EVENT_MOUSE_MOVE = 232, // index: 32
     EVENT_APPLET_FOCUS = 8, // index: 33
-    EVENT_TRACKING = 142, // index: 34
     EVENT_CAMERA_POSITION = 91, // index: 35
 
     ANTICHEAT_OPLOGIC1 = 28, // index: 60
