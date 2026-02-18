@@ -284,6 +284,7 @@ export default class ClientPlayer extends ClientEntity {
 
         this.name = JString.toScreenName(JString.toRawUsername(buf.g8()));
         this.combatLevel = buf.g1();
+        buf.g2(); // todo: skill level
         this.ready = true;
 
         this.baseId = 0n;

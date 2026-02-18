@@ -68,7 +68,7 @@ import WordPack from '#/wordenc/WordPack.js';
 
 import JagFX from '#/sound/JagFX.js';
 
-const CLIENT_VERSION = 254;
+const CLIENT_VERSION = 274;
 
 const MAX_PLAYER_COUNT = 2048;
 const LOCAL_PLAYER_INDEX = 2047;
@@ -1991,8 +1991,9 @@ export class Client extends GameShell {
                     this.loginout.p1(16);
                 }
 
-                this.loginout.p1(this.out.pos + 36 + 1 + 1);
-                this.loginout.p1(CLIENT_VERSION);
+                this.loginout.p1(this.out.pos + 36 + 1 + 2 + 1);
+                this.loginout.p1(255);
+                this.loginout.p2(CLIENT_VERSION);
                 this.loginout.p1(Client.lowMem ? 1 : 0);
 
                 for (let i: number = 0; i < 9; i++) {
@@ -8331,6 +8332,7 @@ export class Client extends GameShell {
                 dz -= 32;
             }
 
+            buf.gBit(1);
             if (this.localPlayer) {
                 npc?.teleport(false, this.localPlayer.routeX[0] + dx, this.localPlayer.routeZ[0] + dz);
             }
