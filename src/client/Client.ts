@@ -553,6 +553,8 @@ export class Client extends GameShell {
     static oplogic9: number = 0;
     static oplogic10: number = 0;
 
+    static CHARSET: string = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!\"£$%^&*()-_=+[{]};:'@#~,<.>/?\\| ";
+
     static {
         let n = 2;
         for (let bit = 0; bit < 32; bit++) {
@@ -788,10 +790,10 @@ export class Client extends GameShell {
             }
 
             this.title = await this.getJagFile('title screen', 25, 'title', 1);
-            this.p11 = PixFont.depack(this.title, 'p11');
-            this.p12 = PixFont.depack(this.title, 'p12');
-            this.b12 = PixFont.depack(this.title, 'b12');
-            this.q8 = PixFont.depack(this.title, 'q8');
+            this.p11 = PixFont.depack(this.title, 'p11_full', false);
+            this.p12 = PixFont.depack(this.title, 'p12_full', false);
+            this.b12 = PixFont.depack(this.title, 'b12_full', false);
+            this.q8 = PixFont.depack(this.title, 'q8_full', true);
 
             await this.loadTitleBackground();
             this.loadTitleImages();
@@ -874,23 +876,23 @@ export class Client extends GameShell {
             if (this.db) {
                 await this.messageBox('Requesting maps', 75);
 
-                this.onDemand.request(3, this.onDemand.getMapFile(47, 48, 0));
-                this.onDemand.request(3, this.onDemand.getMapFile(47, 48, 1));
+                this.onDemand.request(3, this.onDemand.getMapFile(48, 47, 0));
+                this.onDemand.request(3, this.onDemand.getMapFile(48, 47, 1));
 
                 this.onDemand.request(3, this.onDemand.getMapFile(48, 48, 0));
                 this.onDemand.request(3, this.onDemand.getMapFile(48, 48, 1));
 
-                this.onDemand.request(3, this.onDemand.getMapFile(49, 48, 0));
-                this.onDemand.request(3, this.onDemand.getMapFile(49, 48, 1));
+                this.onDemand.request(3, this.onDemand.getMapFile(48, 49, 0));
+                this.onDemand.request(3, this.onDemand.getMapFile(48, 49, 1));
 
                 this.onDemand.request(3, this.onDemand.getMapFile(47, 47, 0));
                 this.onDemand.request(3, this.onDemand.getMapFile(47, 47, 1));
 
-                this.onDemand.request(3, this.onDemand.getMapFile(48, 47, 0));
-                this.onDemand.request(3, this.onDemand.getMapFile(48, 47, 1));
+                this.onDemand.request(3, this.onDemand.getMapFile(47, 48, 0));
+                this.onDemand.request(3, this.onDemand.getMapFile(47, 48, 1));
 
-                this.onDemand.request(3, this.onDemand.getMapFile(148, 48, 0));
-                this.onDemand.request(3, this.onDemand.getMapFile(148, 48, 1));
+                this.onDemand.request(3, this.onDemand.getMapFile(48, 148, 0));
+                this.onDemand.request(3, this.onDemand.getMapFile(48, 148, 1));
 
                 const mapPrefetch = this.onDemand.remaining();
                 while (this.onDemand.remaining() > 0) {
@@ -1363,8 +1365,8 @@ export class Client extends GameShell {
                 }
 
                 let valid: boolean = false;
-                for (let i: number = 0; i < PixFont.CHARSET.length; i++) {
-                    if (String.fromCharCode(key) === PixFont.CHARSET.charAt(i)) {
+                for (let i: number = 0; i < Client.CHARSET.length; i++) {
+                    if (String.fromCharCode(key) === Client.CHARSET.charAt(i)) {
                         valid = true;
                         break;
                     }
@@ -4863,7 +4865,7 @@ export class Client extends GameShell {
 
                 if (this.projectX > -1 && this.chatCount < MAX_CHATS && this.b12) {
                     this.chatWidth[this.chatCount] = (this.b12.stringWid(entity.chatMessage) / 2) | 0;
-                    this.chatHeight[this.chatCount] = this.b12.height2d;
+                    this.chatHeight[this.chatCount] = this.b12.height;
                     this.chatX[this.chatCount] = this.projectX;
                     this.chatY[this.chatCount] = this.projectY;
 
@@ -5312,7 +5314,7 @@ export class Client extends GameShell {
         if (this.sceneState === 1) {
             const status = this.checkScene();
             if (status != 0 && performance.now() - this.sceneLoadStartTime > 360000) {
-                // "game look check ..."
+                // "game loop check ..."
                 console.log(`${this.loginUser} glcfb ${this.loginSeed},${status},${Client.lowMem},${this.db !== null},${this.onDemand?.remaining()},${this.minusedlevel},${this.mapBuildCenterZoneX},${this.mapBuildCenterZoneZ}`);
                 this.sceneLoadStartTime = performance.now();
             }
@@ -5474,10 +5476,10 @@ export class Client extends GameShell {
         Pix3D.initPool(20);
         this.onDemand?.clearPrefetches();
 
-        let left = (this.mapBuildCenterZoneX - 6) / 8 - 1;
-        let right = (this.mapBuildCenterZoneX + 6) / 8 + 1;
-        let bottom = (this.mapBuildCenterZoneZ - 6) / 8 - 1;
-        let top = (this.mapBuildCenterZoneZ + 6) / 8 + 1;
+        let left = (((this.mapBuildCenterZoneX - 6) / 8) | 0) - 1;
+        let right = (((this.mapBuildCenterZoneX + 6) / 8) | 0) + 1;
+        let bottom = (((this.mapBuildCenterZoneZ - 6) / 8) | 0) - 1;
+        let top = (((this.mapBuildCenterZoneZ + 6) / 8) | 0) + 1;
 
         if (this.withinTutorialIsland) {
             left = 49;
@@ -5489,12 +5491,12 @@ export class Client extends GameShell {
         for (let x = left; x <= right; x++) {
             for (let z = bottom; z <= top; z++) {
                 if (left == x || right == x || bottom == z || top == z) {
-                    const land = this.onDemand?.getMapFile(z, x, 0) ?? -1;
+                    const land = this.onDemand?.getMapFile(x, z, 0) ?? -1;
                     if (land != -1) {
                         this.onDemand?.prefetch(3, land);
                     }
 
-                    const loc = this.onDemand?.getMapFile(z, x, 1) ?? -1;
+                    const loc = this.onDemand?.getMapFile(x, z, 1) ?? -1;
                     if (loc != -1) {
                         this.onDemand?.prefetch(3, loc);
                     }
@@ -10319,7 +10321,7 @@ export class Client extends GameShell {
                     continue;
                 }
 
-                for (let lineY: number = childY + font.height2d; text.length > 0; lineY += font.height2d) {
+                for (let lineY: number = childY + font.height; text.length > 0; lineY += font.height) {
                     if (text.indexOf('%') !== -1) {
                         do {
                             const index: number = text.indexOf('%1');

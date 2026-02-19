@@ -281,7 +281,7 @@ export class MapView extends GameShell {
         } catch (_e) {
         }
 
-        this.b12 = PixFont.depack(worldmap, 'b12');
+        this.b12 = PixFont.depack(worldmap, 'b12_full', false);
 
         // custom:
         try {
