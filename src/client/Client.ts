@@ -7009,6 +7009,12 @@ export class Client extends GameShell {
                 return true;
             }
 
+            if (this.ptype === ServerProt.MINIMAP_TOGGLE) {
+                // todo
+                this.ptype = -1;
+                return true;
+            }
+
             if (this.ptype === ServerProt.REBUILD_NORMAL) {
                 const zoneX: number = this.in.g2();
                 const zoneZ: number = this.in.g2();

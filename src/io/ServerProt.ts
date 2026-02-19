@@ -62,6 +62,7 @@ export const enum ServerProt {
     P_COUNTDIALOG = 210,
     SET_MULTIWAY = 207,
     SET_PLAYER_OP = 17,
+    MINIMAP_TOGGLE = 194,
 
     // maps
     REBUILD_NORMAL = 231,
