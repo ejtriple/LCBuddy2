@@ -449,7 +449,7 @@ export default class Model extends ModelSource {
                     copyRenderType = true;
                 }
 
-                if (model.facePriority !== null) {
+                if (model.facePriority === null) {
                     if (combined.priority === -1) {
                         combined.priority = model.priority;
                     }
@@ -597,7 +597,7 @@ export default class Model extends ModelSource {
                     copyRenderType = true;
                 }
 
-                if (model.facePriority !== null) {
+                if (model.facePriority === null) {
                     if (combined.priority === -1) {
                         combined.priority = model.priority;
                     }

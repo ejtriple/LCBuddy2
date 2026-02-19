@@ -13,6 +13,7 @@ import { TypedArray1d } from '#/util/Arrays.js';
 import NpcType from '#/config/NpcType.js';
 import ObjType from '#/config/ObjType.js';
 import type ClientPlayer from '#/dash3d/ClientPlayer.js';
+import AnimFrame from '#/dash3d/AnimFrame.js';
 
 export const enum ComponentType {
     TYPE_LAYER = 0,
@@ -376,7 +377,7 @@ export default class IfType {
             return model;
         }
 
-        const tmp: Model = Model.copyForAnim(model, true, true, false);
+        const tmp: Model = Model.copyForAnim(model, true, AnimFrame.shareAlpha(primaryFrame) && AnimFrame.shareAlpha(secondaryFrame), false);
         if (primaryFrame !== -1 || secondaryFrame !== -1) {
             tmp.prepareAnim();
         }
