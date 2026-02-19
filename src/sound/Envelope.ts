@@ -21,18 +21,22 @@ export default class Envelope {
         this.shapePeak[1] = 65535;
     }
 
-    load(dat: Packet): void {
-        this.form = dat.g1();
-        this.start = dat.g4();
-        this.end = dat.g4();
+    load(buf: Packet): void {
+        this.form = buf.g1();
+        this.start = buf.g4();
+        this.end = buf.g4();
 
-        this.length = dat.g1();
+        this.unpackPoints(buf);
+    }
+
+    unpackPoints(buf: Packet) {
+        this.length = buf.g1();
         this.shapeDelta = new Int32Array(this.length);
         this.shapePeak = new Int32Array(this.length);
 
         for (let i = 0; i < this.length; i++) {
-            this.shapeDelta[i] = dat.g2();
-            this.shapePeak[i] = dat.g2();
+            this.shapeDelta[i] = buf.g2();
+            this.shapePeak[i] = buf.g2();
         }
     }
 

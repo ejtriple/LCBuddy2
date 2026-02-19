@@ -1,10 +1,32 @@
 import Packet from '#/io/Packet.js';
 
 import Envelope from '#/sound/Envelope.js';
+import Filter from '#/sound/Filter.js';
 
 import JavaRandom from '#/util/JavaRandom.js';
 
 export default class Tone {
+    static buf: Int32Array = new Int32Array(22050 * 10);
+    static noise: Int32Array = new Int32Array(32768);
+    static sine: Int32Array = new Int32Array(32768);
+
+    static fPos: Int32Array = new Int32Array(5);
+    static fDel: Int32Array = new Int32Array(5);
+    static fAmp: Int32Array = new Int32Array(5);
+    static fMulti: Int32Array = new Int32Array(5);
+    static fOffset: Int32Array = new Int32Array(5);
+
+    static {
+        const rand = new JavaRandom(0);
+        for (let i = 0; i < 32768; i++) {
+            this.noise[i] = (rand.nextInt() & 0x2) - 1;
+        }
+
+        for (let i = 0; i < 32768; i++) {
+            this.sine[i] = (Math.sin(i / 5215.1903) * 16384.0) | 0;
+        }
+    }
+
     frequencyBase: Envelope = new Envelope();
     amplitudeBase: Envelope = new Envelope();
 
@@ -27,26 +49,8 @@ export default class Tone {
     length: number = 500;
     start: number = 0;
 
-    static buf: Int32Array = new Int32Array(22050 * 10);
-    static noise: Int32Array = new Int32Array(32768);
-    static sine: Int32Array = new Int32Array(32768);
-
-    static fPos: Int32Array = new Int32Array(5);
-    static fDel: Int32Array = new Int32Array(5);
-    static fAmp: Int32Array = new Int32Array(5);
-    static fMulti: Int32Array = new Int32Array(5);
-    static fOffset: Int32Array = new Int32Array(5);
-
-    static {
-        const rand = new JavaRandom(0);
-        for (let i = 0; i < 32768; i++) {
-            this.noise[i] = (rand.nextInt() & 0x2) - 1;
-        }
-
-        for (let i = 0; i < 32768; i++) {
-            this.sine[i] = (Math.sin(i / 5215.1903) * 16384.0) | 0;
-        }
-    }
+    filter: Filter | null = null;
+    filterRange: Envelope | null = null;
 
     generate(sampleCount: number, length: number): Int32Array {
         for (let sample = 0; sample < sampleCount; sample++) {
@@ -191,57 +195,61 @@ export default class Tone {
         }
     }
 
-    load(dat: Packet): void {
+    load(buf: Packet): void {
         this.frequencyBase = new Envelope();
-        this.frequencyBase.load(dat);
+        this.frequencyBase.load(buf);
 
         this.amplitudeBase = new Envelope();
-        this.amplitudeBase.load(dat);
+        this.amplitudeBase.load(buf);
 
-        if (dat.g1() !== 0) {
-            dat.pos--;
+        if (buf.g1() !== 0) {
+            buf.pos--;
 
             this.frequencyModRate = new Envelope();
-            this.frequencyModRate.load(dat);
+            this.frequencyModRate.load(buf);
 
             this.frequencyModRange = new Envelope();
-            this.frequencyModRange.load(dat);
+            this.frequencyModRange.load(buf);
         }
 
-        if (dat.g1() !== 0) {
-            dat.pos--;
+        if (buf.g1() !== 0) {
+            buf.pos--;
 
             this.amplitudeModRate = new Envelope();
-            this.amplitudeModRate.load(dat);
+            this.amplitudeModRate.load(buf);
 
             this.amplitudeModRange = new Envelope();
-            this.amplitudeModRange.load(dat);
+            this.amplitudeModRange.load(buf);
         }
 
-        if (dat.g1() !== 0) {
-            dat.pos--;
+        if (buf.g1() !== 0) {
+            buf.pos--;
 
             this.release = new Envelope();
-            this.release.load(dat);
+            this.release.load(buf);
 
             this.attack = new Envelope();
-            this.attack.load(dat);
+            this.attack.load(buf);
         }
 
         for (let harmonic = 0; harmonic < 10; harmonic++) {
-            const volume = dat.gsmarts();
+            const volume = buf.gsmarts();
             if (volume === 0) {
                 break;
             }
 
             this.harmonicVolume[harmonic] = volume;
-            this.harmonicSemitone[harmonic] = dat.gsmart();
-            this.harmonicDelay[harmonic] = dat.gsmarts();
+            this.harmonicSemitone[harmonic] = buf.gsmart();
+            this.harmonicDelay[harmonic] = buf.gsmarts();
         }
 
-        this.reverbDelay = dat.gsmarts();
-        this.reverbVolume = dat.gsmarts();
-        this.length = dat.g2();
-        this.start = dat.g2();
+        this.reverbDelay = buf.gsmarts();
+        this.reverbVolume = buf.gsmarts();
+        this.length = buf.g2();
+        this.start = buf.g2();
+
+        this.filter = new Filter();
+        this.filterRange = new Envelope();
+        this.filter.unpack(buf, this.filterRange);
     }
 }
