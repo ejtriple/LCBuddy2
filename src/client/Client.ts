@@ -6356,8 +6356,15 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.IF_SETANIM) {
-                const com: number = this.in.g2();
-                IfType.list[com].modelAnim = this.in.g2();
+                const comId: number = this.in.g2();
+                const seqId: number = this.in.g2b();
+
+                const com: IfType = IfType.list[comId];
+                com.modelAnim = seqId;
+                if (seqId === -1) {
+                    com.animFrame = 0;
+                    com.animCycle = 0;
+                }
 
                 this.ptype = -1;
                 return true;
