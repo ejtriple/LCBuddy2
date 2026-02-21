@@ -6298,6 +6298,9 @@ export class Client extends GameShell {
 
             if (this.ptype === ServerProt.IF_OPENOVERLAY) {
                 const comId: number = this.in.g2b();
+                if (comId >= 0) {
+                    this.ifAnimReset(comId);
+                }
                 this.mainOverlayId = comId;
 
                 this.ptype = -1;
