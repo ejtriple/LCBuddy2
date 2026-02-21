@@ -218,6 +218,7 @@ export default class ClientPlayer extends ClientEntity {
     maxTileX: number = 0;
     maxTileZ: number = 0;
     transmog: NpcType | null = null;
+    skillLevel: number = 0;
 
     setAppearance(buf: Packet): void {
         buf.pos = 0;
@@ -284,7 +285,7 @@ export default class ClientPlayer extends ClientEntity {
 
         this.name = JString.toScreenName(JString.toRawUsername(buf.g8()));
         this.combatLevel = buf.g1();
-        buf.g2(); // todo: skill level
+        this.skillLevel = buf.g2();
         this.ready = true;
 
         this.baseId = 0n;

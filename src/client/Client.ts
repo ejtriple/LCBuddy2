@@ -512,6 +512,7 @@ export class Client extends GameShell {
     private reportAbuseMuteOption: boolean = false;
     private reportAbuseComId: number = -1;
 
+    private minimapState: number = 0;
     private minimapLevel: number = -1;
     private activeMapFunctionCount: number = 0;
     private activeMapFunctionX: Int32Array = new Int32Array(1000);
@@ -2057,6 +2058,7 @@ export class Client extends GameShell {
                 this.macroMinimapZoom = ((Math.random() * 30.0) | 0) - 20;
                 this.orbitCameraYaw = (((Math.random() * 20.0) | 0) - 10) & 0x7ff;
 
+                this.minimapState = 0;
                 this.minimapLevel = -1;
                 this.minimapFlagX = 0;
                 this.minimapFlagZ = 0;
@@ -2736,6 +2738,7 @@ export class Client extends GameShell {
         this.p12?.centreString('Please wait - attempting to reestablish', 256, 158, Colour.WHITE);
         this.areaViewport?.draw(4, 4);
 
+        this.minimapState = 0;
         this.minimapFlagX = 0;
 
         this.stream?.close();
@@ -2980,7 +2983,7 @@ export class Client extends GameShell {
     }
 
     minimapLoop(): void {
-        if (this.mouseClickButton !== 1 || !this.localPlayer) {
+        if (this.minimapState !== 0 || this.mouseClickButton !== 1 || !this.localPlayer) {
             return;
         }
 
@@ -7014,7 +7017,8 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.MINIMAP_TOGGLE) {
-                // todo
+                this.minimapState = this.in.g1();
+
                 this.ptype = -1;
                 return true;
             }
@@ -8344,9 +8348,9 @@ export class Client extends GameShell {
                 dz -= 32;
             }
 
-            buf.gBit(1);
+            const jump = buf.gBit(1);
             if (this.localPlayer) {
-                npc?.teleport(false, this.localPlayer.routeX[0] + dx, this.localPlayer.routeZ[0] + dz);
+                npc?.teleport(jump === 1, this.localPlayer.routeX[0] + dx, this.localPlayer.routeZ[0] + dz);
             }
 
             const extendedInfo: number = buf.gBit(1);
@@ -9773,8 +9777,10 @@ export class Client extends GameShell {
         }
 
         let tooltip: string | null = null;
-        if (this.localPlayer) {
+        if (player.skillLevel === 0 && this.localPlayer) {
             tooltip = player.name + this.combatColourCode(this.localPlayer.combatLevel, player.combatLevel) + ' (level-' + player.combatLevel + ')';
+        } else {
+            tooltip = player.name + ' (skill-' + player.skillLevel + ')';
         }
 
         if (this.useMode === 1) {
@@ -11495,6 +11501,24 @@ export class Client extends GameShell {
         }
 
         this.areaMapback?.setPixels();
+
+        if (this.minimapState == 2) {
+            if (this.mapback !== null) {
+                const mask = this.mapback.data;
+                const pixels = Pix2D.pixels;
+                const len = mask.length;
+                for (let i = 0; i < len; i++) {
+                    if (mask[i] === 0) {
+                        pixels[i] = 0;
+                    }
+                }
+            }
+
+            this.compass?.scanlineRotatePlotSprite(0, 0, 33, 33, 25, 25, this.orbitCameraYaw, 256, this.compassMaskLineOffsets, this.compassMaskLineLengths);
+
+            this.areaViewport?.setPixels();
+            return;
+        }
 
         const angle: number = (this.orbitCameraYaw + this.macroMinimapAngle) & 0x7ff;
         let anchorX: number = ((this.localPlayer.x / 32) | 0) + 48;
