@@ -247,11 +247,11 @@ export default class Packet extends Linkable2 {
         this.view.setUint8(this.pos - size - 1, size);
     }
 
-    bits(): void {
+    gBitStart(): void {
         this.bitPos = this.pos << 3;
     }
 
-    bytes(): void {
+    gBitEnd(): void {
         this.pos = (this.bitPos + 7) >>> 3;
     }
 

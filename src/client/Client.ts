@@ -82,12 +82,52 @@ const SCROLLBAR_GRIP_HIGHLIGHT = 0x766654;
 const SCROLLBAR_GRIP_LOWLIGHT = 0x332d25;
 
 export class Client extends GameShell {
-    static levelExperience: number[] = [];
-    static readbit = new Int32Array(32);
-
     static nodeId: number = 10;
     static memServer: boolean = true;
     static lowMem: boolean = false;
+
+    static cyclelogic1: number = 0;
+    static cyclelogic2: number = 0;
+    static cyclelogic3: number = 0;
+    static cyclelogic4: number = 0;
+    static cyclelogic5: number = 0;
+    static cyclelogic6: number = 0;
+    static cyclelogic7: number = 0;
+    static cyclelogic8: number = 0;
+    static cyclelogic9: number = 0;
+    static cyclelogic10: number = 0;
+
+    static oplogic1: number = 0;
+    static oplogic2: number = 0;
+    static oplogic3: number = 0;
+    static oplogic4: number = 0;
+    static oplogic5: number = 0;
+    static oplogic6: number = 0;
+    static oplogic7: number = 0;
+    static oplogic8: number = 0;
+    static oplogic9: number = 0;
+    static oplogic10: number = 0;
+
+    static CHARSET: string = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!\"£$%^&*()-_=+[{]};:'@#~,<.>/?\\| ";
+
+    static readbit = new Int32Array(32);
+    static levelExperience: number[] = [];
+
+    static {
+        let n = 2;
+        for (let bit = 0; bit < 32; bit++) {
+            Client.readbit[bit] = n - 1;
+            n += n;
+        }
+
+        let acc: number = 0;
+        for (let i: number = 0; i < 99; i++) {
+            const level: number = i + 1;
+            const delta: number = (level + Math.pow(2.0, level / 7.0) * 300.0) | 0;
+            acc += delta;
+            Client.levelExperience[i] = (acc / 4) | 0;
+        }
+    }
 
     private alreadyStarted: boolean = false;
     private errorStarted: boolean = false;
@@ -530,46 +570,6 @@ export class Client extends GameShell {
     private idkDesignColour: Int32Array = new Int32Array(5);
     private idkDesignButton1: Pix32 | null = null;
     private idkDesignButton2: Pix32 | null = null;
-
-    static cyclelogic1: number = 0;
-    static cyclelogic2: number = 0;
-    static cyclelogic3: number = 0;
-    static cyclelogic4: number = 0;
-    static cyclelogic5: number = 0;
-    static cyclelogic6: number = 0;
-    static cyclelogic7: number = 0;
-    static cyclelogic8: number = 0;
-    static cyclelogic9: number = 0;
-    static cyclelogic10: number = 0;
-
-    static oplogic1: number = 0;
-    static oplogic2: number = 0;
-    static oplogic3: number = 0;
-    static oplogic4: number = 0;
-    static oplogic5: number = 0;
-    static oplogic6: number = 0;
-    static oplogic7: number = 0;
-    static oplogic8: number = 0;
-    static oplogic9: number = 0;
-    static oplogic10: number = 0;
-
-    static CHARSET: string = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!\"£$%^&*()-_=+[{]};:'@#~,<.>/?\\| ";
-
-    static {
-        let n = 2;
-        for (let bit = 0; bit < 32; bit++) {
-            Client.readbit[bit] = n - 1;
-            n += n;
-        }
-
-        let acc: number = 0;
-        for (let i: number = 0; i < 99; i++) {
-            const level: number = i + 1;
-            const delta: number = (level + Math.pow(2.0, level / 7.0) * 300.0) | 0;
-            acc += delta;
-            Client.levelExperience[i] = (acc / 4) | 0;
-        }
-    }
 
     // ----
 
@@ -6151,9 +6151,8 @@ export class Client extends GameShell {
             this.ptype0 = this.ptype;
 
             if (this.ptype === ServerProt.IF_OPENCHAT) {
-                const com: number = this.in.g2();
-
-                this.ifAnimReset(com);
+                const comId: number = this.in.g2();
+                this.ifAnimReset(comId);
 
                 if (this.sideModalId !== -1) {
                     this.sideModalId = -1;
@@ -6161,7 +6160,7 @@ export class Client extends GameShell {
                     this.redrawSideicons = true;
                 }
 
-                this.chatComId = com;
+                this.chatComId = comId;
                 this.redrawChatback = true;
                 this.mainModalId = -1;
                 this.resumedPauseButton = false;
@@ -6171,8 +6170,8 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.IF_OPENMAIN_SIDE) {
-                const main: number = this.in.g2();
-                const side: number = this.in.g2();
+                const mainComId: number = this.in.g2();
+                const sideComId: number = this.in.g2();
 
                 if (this.chatComId !== -1) {
                     this.chatComId = -1;
@@ -6184,8 +6183,8 @@ export class Client extends GameShell {
                     this.redrawChatback = true;
                 }
 
-                this.mainModalId = main;
-                this.sideModalId = side;
+                this.mainModalId = mainComId;
+                this.sideModalId = sideComId;
                 this.redrawSidebar = true;
                 this.redrawSideicons = true;
                 this.resumedPauseButton = false;
@@ -6219,14 +6218,13 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.IF_SETTAB) {
-                let com: number = this.in.g2();
+                let comId: number = this.in.g2();
                 const tab: number = this.in.g1();
-
-                if (com === 65535) {
-                    com = -1;
+                if (comId === 65535) {
+                    comId = -1;
                 }
+                this.sideOverlayId[tab] = comId;
 
-                this.sideOverlayId[tab] = com;
                 this.redrawSidebar = true;
                 this.redrawSideicons = true;
 
@@ -6235,9 +6233,8 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.IF_OPENMAIN) {
-                const com: number = this.in.g2();
-
-                this.ifAnimReset(com);
+                const comId: number = this.in.g2();
+                this.ifAnimReset(comId);
 
                 if (this.sideModalId !== -1) {
                     this.sideModalId = -1;
@@ -6255,7 +6252,7 @@ export class Client extends GameShell {
                     this.redrawChatback = true;
                 }
 
-                this.mainModalId = com;
+                this.mainModalId = comId;
                 this.resumedPauseButton = false;
 
                 this.ptype = -1;
@@ -6263,9 +6260,8 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.IF_OPENSIDE) {
-                const com: number = this.in.g2();
-
-                this.ifAnimReset(com);
+                const comId: number = this.in.g2();
+                this.ifAnimReset(comId);
 
                 if (this.chatComId !== -1) {
                     this.chatComId = -1;
@@ -6277,7 +6273,7 @@ export class Client extends GameShell {
                     this.redrawChatback = true;
                 }
 
-                this.sideModalId = com;
+                this.sideModalId = comId;
                 this.redrawSidebar = true;
                 this.redrawSideicons = true;
                 this.mainModalId = -1;
@@ -6298,21 +6294,21 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.IF_OPENOVERLAY) {
-                const com = this.in.g2b();
-                this.mainOverlayId = com;
+                const comId: number = this.in.g2b();
+                this.mainOverlayId = comId;
 
                 this.ptype = -1;
                 return true;
             }
 
             if (this.ptype === ServerProt.IF_SETCOLOUR) {
-                const com: number = this.in.g2();
+                const comId: number = this.in.g2();
                 const colour: number = this.in.g2();
 
                 const r: number = (colour >> 10) & 0x1f;
                 const g: number = (colour >> 5) & 0x1f;
                 const b: number = colour & 0x1f;
-                IfType.list[com].colour = (r << 19) + (g << 11) + (b << 3);
+                IfType.list[comId].colour = (r << 19) + (g << 11) + (b << 3);
 
                 this.ptype = -1;
                 return true;
@@ -6329,27 +6325,27 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.IF_SETOBJECT) {
-                const c: number = this.in.g2();
-                const obj: number = this.in.g2();
+                const comId: number = this.in.g2();
+                const objId: number = this.in.g2();
                 const zoom: number = this.in.g2();
 
-                const type: ObjType = ObjType.list(obj);
-                IfType.list[c].model1Type = 4;
-                IfType.list[c].model1Id = obj;
-                IfType.list[c].modelXAn = type.xan2d;
-                IfType.list[c].modelYAn = type.yan2d;
-                IfType.list[c].modelZoom = ((type.zoom2d * 100) / zoom) | 0;
+                const type: ObjType = ObjType.list(objId);
+                IfType.list[comId].model1Type = 4;
+                IfType.list[comId].model1Id = objId;
+                IfType.list[comId].modelXAn = type.xan2d;
+                IfType.list[comId].modelYAn = type.yan2d;
+                IfType.list[comId].modelZoom = ((type.zoom2d * 100) / zoom) | 0;
 
                 this.ptype = -1;
                 return true;
             }
 
             if (this.ptype === ServerProt.IF_SETMODEL) {
-                const com: number = this.in.g2();
-                const m: number = this.in.g2();
+                const comId: number = this.in.g2();
+                const modelId: number = this.in.g2();
 
-                IfType.list[com].model1Type = 1;
-                IfType.list[com].model1Id = m;
+                IfType.list[comId].model1Type = 1;
+                IfType.list[comId].model1Id = modelId;
 
                 this.ptype = -1;
                 return true;
@@ -6397,11 +6393,11 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.IF_SETNPCHEAD) {
-                const com: number = this.in.g2();
+                const comId: number = this.in.g2();
                 const npcId: number = this.in.g2();
 
-                IfType.list[com].model1Type = 2;
-                IfType.list[com].model1Id = npcId;
+                IfType.list[comId].model1Type = 2;
+                IfType.list[comId].model1Id = npcId;
 
                 this.ptype = -1;
                 return true;
@@ -6410,31 +6406,31 @@ export class Client extends GameShell {
             if (this.ptype === ServerProt.IF_SETPOSITION) {
                 const comId: number = this.in.g2();
                 const x: number = this.in.g2b();
-                const z: number = this.in.g2b();
+                const y: number = this.in.g2b();
 
                 const com: IfType = IfType.list[comId];
                 com.x = x;
-                com.y = z;
+                com.y = y;
 
                 this.ptype = -1;
                 return true;
             }
 
             if (this.ptype === ServerProt.IF_SETSCROLLPOS) {
-                const com: number = this.in.g2();
+                const comId: number = this.in.g2();
                 let pos: number = this.in.g2();
 
-                const inter = IfType.list[com];
-                if (typeof inter !== 'undefined' && inter.type === ComponentType.TYPE_LAYER) {
+                const com = IfType.list[comId];
+                if (typeof com !== 'undefined' && com.type === ComponentType.TYPE_LAYER) {
                     if (pos < 0) {
                         pos = 0;
                     }
 
-                    if (pos > inter.scrollHeight - inter.height) {
-                        pos = inter.scrollHeight - inter.height;
+                    if (pos > com.scrollHeight - com.height) {
+                        pos = com.scrollHeight - com.height;
                     }
 
-                    inter.scrollPos = pos;
+                    com.scrollPos = pos;
                 }
 
                 this.ptype = -1;
@@ -6467,14 +6463,17 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.UPDATE_INV_STOP_TRANSMIT) {
-                const component = this.in.g2();
-                const inv: IfType = IfType.list[component];
+                const comId = this.in.g2();
+                const inv: IfType = IfType.list[comId];
 
-                if (inv.linkObjType) {
-                    for (let i: number = 0; i < inv.linkObjType.length; i++) {
-                        inv.linkObjType[i] = -1;
-                        inv.linkObjType[i] = 0;
-                    }
+                if (!inv.linkObjType || !inv.linkObjNumber) {
+                    throw new Error();
+                }
+
+                for (let i: number = 0; i < inv.linkObjType.length; i++) {
+                    // [sic] redundant assignment
+                    inv.linkObjType[i] = -1;
+                    inv.linkObjType[i] = 0;
                 }
 
                 this.ptype = -1;
@@ -6484,34 +6483,28 @@ export class Client extends GameShell {
             if (this.ptype === ServerProt.UPDATE_INV_FULL) {
                 this.redrawSidebar = true;
 
-                const component: number = this.in.g2();
-                const inv: IfType = IfType.list[component];
+                const comId: number = this.in.g2();
+                const inv: IfType = IfType.list[comId];
+
+                if (!inv.linkObjType || !inv.linkObjNumber) {
+                    throw new Error();
+                }
+
                 const size: number = this.in.g1();
+                for (let i: number = 0; i < size; i++) {
+                    inv.linkObjType[i] = this.in.g2();
 
-                if (inv.linkObjType && inv.linkObjNumber) {
-                    for (let i: number = 0; i < size; i++) {
-                        inv.linkObjType[i] = this.in.g2();
-
-                        let count: number = this.in.g1();
-                        if (count === 255) {
-                            count = this.in.g4();
-                        }
-
-                        inv.linkObjNumber[i] = count;
+                    let count: number = this.in.g1();
+                    if (count === 255) {
+                        count = this.in.g4();
                     }
 
-                    for (let i: number = size; i < inv.linkObjType.length; i++) {
-                        inv.linkObjType[i] = 0;
-                        inv.linkObjNumber[i] = 0;
-                    }
-                } else {
-                    for (let i: number = 0; i < size; i++) {
-                        this.in.g2();
+                    inv.linkObjNumber[i] = count;
+                }
 
-                        if (this.in.g1() === 255) {
-                            this.in.g4();
-                        }
-                    }
+                for (let i: number = size; i < inv.linkObjType.length; i++) {
+                    inv.linkObjType[i] = 0;
+                    inv.linkObjNumber[i] = 0;
                 }
 
                 this.ptype = -1;
@@ -6521,8 +6514,12 @@ export class Client extends GameShell {
             if (this.ptype === ServerProt.UPDATE_INV_PARTIAL) {
                 this.redrawSidebar = true;
 
-                const component: number = this.in.g2();
-                const inv: IfType = IfType.list[component];
+                const comId: number = this.in.g2();
+                const inv: IfType = IfType.list[comId];
+
+                if (!inv.linkObjType || !inv.linkObjNumber) {
+                    throw new Error();
+                }
 
                 while (this.in.pos < this.psize) {
                     const slot: number = this.in.g1();
@@ -6533,7 +6530,7 @@ export class Client extends GameShell {
                         count = this.in.g4();
                     }
 
-                    if (inv.linkObjType && inv.linkObjNumber && slot >= 0 && slot < inv.linkObjType.length) {
+                    if (slot >= 0 && slot < inv.linkObjType.length) {
                         inv.linkObjType[slot] = id;
                         inv.linkObjNumber[slot] = count;
                     }
@@ -7176,14 +7173,14 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.VARP_SMALL) {
-                const variable: number = this.in.g2();
+                const varpId: number = this.in.g2();
                 const value: number = this.in.g1b();
 
-                this.varServ[variable] = value;
+                this.varServ[varpId] = value;
 
-                if (this.var[variable] !== value) {
-                    this.var[variable] = value;
-                    this.clientVar(variable);
+                if (this.var[varpId] !== value) {
+                    this.var[varpId] = value;
+                    this.clientVar(varpId);
 
                     this.redrawSidebar = true;
 
@@ -7197,14 +7194,14 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.VARP_LARGE) {
-                const variable: number = this.in.g2();
+                const varpId: number = this.in.g2();
                 const value: number = this.in.g4();
 
-                this.varServ[variable] = value;
+                this.varServ[varpId] = value;
 
-                if (this.var[variable] !== value) {
-                    this.var[variable] = value;
-                    this.clientVar(variable);
+                if (this.var[varpId] !== value) {
+                    this.var[varpId] = value;
+                    this.clientVar(varpId);
 
                     this.redrawSidebar = true;
 
@@ -7233,14 +7230,14 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.SYNTH_SOUND) {
-                const id: number = this.in.g2();
-                const loop: number = this.in.g1();
+                const soundId: number = this.in.g2();
+                const loops: number = this.in.g1();
                 const delay: number = this.in.g2();
 
                 if (this.waveEnabled && !Client.lowMem && this.waveCount < 50) {
-                    this.waveIds[this.waveCount] = id;
-                    this.waveLoops[this.waveCount] = loop;
-                    this.waveDelay[this.waveCount] = delay + JagFX.delays[id];
+                    this.waveIds[this.waveCount] = soundId;
+                    this.waveLoops[this.waveCount] = loops;
+                    this.waveDelay[this.waveCount] = delay + JagFX.delays[soundId];
                     this.waveCount++;
                 }
 
@@ -7249,18 +7246,18 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.MIDI_SONG) {
-                let id: number = this.in.g2();
-                if (id == 65535) {
-                    id = -1;
+                let songId: number = this.in.g2();
+                if (songId == 65535) {
+                    songId = -1;
                 }
 
-                if (this.nextMidiSong != id && this.midiActive && !Client.lowMem) {
-                    this.midiSong = id;
+                if (this.nextMidiSong != songId && this.midiActive && !Client.lowMem) {
+                    this.midiSong = songId;
                     this.midiFading = true;
                     this.onDemand?.request(2, this.midiSong);
                 }
 
-                this.nextMidiSong = id;
+                this.nextMidiSong = songId;
                 this.nextMusicDelay = 0;
 
                 this.ptype = -1;
@@ -7268,11 +7265,11 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.MIDI_JINGLE) {
-                const id: number = this.in.g2();
+                const jingleId: number = this.in.g2();
                 const delay: number = this.in.g2();
 
                 if (this.midiActive && !Client.lowMem) {
-                    this.midiSong = id;
+                    this.midiSong = jingleId;
                     this.midiFading = false;
                     this.onDemand?.request(2, this.midiSong);
                     this.nextMusicDelay = delay;
@@ -7834,10 +7831,10 @@ export class Client extends GameShell {
         this.entityRemovalCount = 0;
         this.entityUpdateCount = 0;
 
-        this.getPlayerLocal(buf);
-        this.getPlayerOldVis(buf);
-        this.getPlayerNewVis(buf, size);
-        this.getPlayerExtended(buf);
+        this.getPlayerPosLocal(buf);
+        this.getPlayerPosOldVis(buf);
+        this.getPlayerPosNewVis(buf, size);
+        this.getPlayerPosExtended(buf);
 
         for (let i: number = 0; i < this.entityRemovalCount; i++) {
             const index: number = this.entityRemovalIds[i];
@@ -7864,8 +7861,8 @@ export class Client extends GameShell {
         }
     }
 
-    private getPlayerLocal(buf: Packet): void {
-        buf.bits();
+    private getPlayerPosLocal(buf: Packet): void {
+        buf.gBitStart();
 
         const info: number = buf.gBit(1);
         if (info !== 0) {
@@ -7908,7 +7905,7 @@ export class Client extends GameShell {
         }
     }
 
-    private getPlayerOldVis(buf: Packet): void {
+    private getPlayerPosOldVis(buf: Packet): void {
         const count: number = buf.gBit(8);
 
         if (count < this.playerCount) {
@@ -7978,7 +7975,7 @@ export class Client extends GameShell {
         }
     }
 
-    private getPlayerNewVis(buf: Packet, size: number): void {
+    private getPlayerPosNewVis(buf: Packet, size: number): void {
         while (buf.bitPos + 10 < size * 8) {
             const index = buf.gBit(11);
             if (index === 2047) {
@@ -8022,10 +8019,10 @@ export class Client extends GameShell {
             }
         }
 
-        buf.bytes();
+        buf.gBitEnd();
     }
 
-    private getPlayerExtended(buf: Packet): void {
+    private getPlayerPosExtended(buf: Packet): void {
         for (let i: number = 0; i < this.entityUpdateCount; i++) {
             const index: number = this.entityUpdateIds[i];
             const player: ClientPlayer | null = this.players[index];
@@ -8038,11 +8035,11 @@ export class Client extends GameShell {
                 mask += buf.g1() << 8;
             }
 
-            this.getPlayerExtendedDecode(player, index, mask, buf);
+            this.getPlayerPosDecodeExtended(player, index, mask, buf);
         }
     }
 
-    private getPlayerExtendedDecode(player: ClientPlayer, index: number, mask: number, buf: Packet): void {
+    private getPlayerPosDecodeExtended(player: ClientPlayer, index: number, mask: number, buf: Packet): void {
         if ((mask & PlayerUpdate.APPEARANCE) !== 0) {
             const length: number = buf.g1();
 
@@ -8239,7 +8236,7 @@ export class Client extends GameShell {
     }
 
     private getNpcPosOldVis(buf: Packet): void {
-        buf.bits();
+        buf.gBitStart();
 
         const count: number = buf.gBit(8);
         if (count < this.npcCount) {
@@ -8358,7 +8355,7 @@ export class Client extends GameShell {
             }
         }
 
-        buf.bytes();
+        buf.gBitEnd();
     }
 
     private getNpcPosExtended(buf: Packet): void {
