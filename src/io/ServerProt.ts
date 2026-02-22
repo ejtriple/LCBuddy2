@@ -22,7 +22,7 @@ export const enum ServerProt {
     IF_SETSCROLLPOS = 54,
 
     // tutorial area
-    TUT_FLASH = 89,
+    TUT_FLASH = 90,
     TUT_OPEN = 130,
 
     // inventory
