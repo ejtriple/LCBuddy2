@@ -5582,19 +5582,19 @@ export class Client extends GameShell {
 
                         for (let i: number = 0; i < 10; i++) {
                             const rand: number = (Math.random() * 4.0) | 0;
-                            if (rand === 0 && stx > 0 && stx > x - 3 && (flags[CollisionMap.index(stx - 1, stz)] & CollisionFlag.BLOCK_WEST) === CollisionFlag.OPEN) {
+                            if (rand === 0 && stx > 0 && stx > x - 3 && (flags[CollisionMap.index(stx - 1, stz)] & CollisionFlag.PL_WALK_E) === CollisionFlag._OPEN) {
                                 stx--;
                             }
 
-                            if (rand === 1 && stx < maxX - 1 && stx < x + 3 && (flags[CollisionMap.index(stx + 1, stz)] & CollisionFlag.BLOCK_EAST) === CollisionFlag.OPEN) {
+                            if (rand === 1 && stx < maxX - 1 && stx < x + 3 && (flags[CollisionMap.index(stx + 1, stz)] & CollisionFlag.PL_WALK_W) === CollisionFlag._OPEN) {
                                 stx++;
                             }
 
-                            if (rand === 2 && stz > 0 && stz > z - 3 && (flags[CollisionMap.index(stx, stz - 1)] & CollisionFlag.BLOCK_SOUTH) === CollisionFlag.OPEN) {
+                            if (rand === 2 && stz > 0 && stz > z - 3 && (flags[CollisionMap.index(stx, stz - 1)] & CollisionFlag.PL_WALK_N) === CollisionFlag._OPEN) {
                                 stz--;
                             }
 
-                            if (rand === 3 && stz < maxZ - 1 && stz < z + 3 && (flags[CollisionMap.index(stx, stz + 1)] & CollisionFlag.BLOCK_NORTH) === CollisionFlag.OPEN) {
+                            if (rand === 3 && stz < maxZ - 1 && stz < z + 3 && (flags[CollisionMap.index(stx, stz + 1)] & CollisionFlag.PL_WALK_S) === CollisionFlag._OPEN) {
                                 stz++;
                             }
                         }
@@ -5899,7 +5899,7 @@ export class Client extends GameShell {
 
             const nextCost: number = this.distMap[CollisionMap.index(x, z)] + 1;
             let index: number = CollisionMap.index(x - 1, z);
-            if (x > 0 && this.dirMap[index] === 0 && (flags[index] & CollisionFlag.BLOCK_WEST) === CollisionFlag.OPEN) {
+            if (x > 0 && this.dirMap[index] === 0 && (flags[index] & CollisionFlag.PL_WALK_E) === CollisionFlag._OPEN) {
                 this.routeX[steps] = x - 1;
                 this.routeZ[steps] = z;
                 steps = (steps + 1) % bufferSize;
@@ -5908,7 +5908,7 @@ export class Client extends GameShell {
             }
 
             index = CollisionMap.index(x + 1, z);
-            if (x < sceneWidth - 1 && this.dirMap[index] === 0 && (flags[index] & CollisionFlag.BLOCK_EAST) === CollisionFlag.OPEN) {
+            if (x < sceneWidth - 1 && this.dirMap[index] === 0 && (flags[index] & CollisionFlag.PL_WALK_W) === CollisionFlag._OPEN) {
                 this.routeX[steps] = x + 1;
                 this.routeZ[steps] = z;
                 steps = (steps + 1) % bufferSize;
@@ -5917,7 +5917,7 @@ export class Client extends GameShell {
             }
 
             index = CollisionMap.index(x, z - 1);
-            if (z > 0 && this.dirMap[index] === 0 && (flags[index] & CollisionFlag.BLOCK_SOUTH) === CollisionFlag.OPEN) {
+            if (z > 0 && this.dirMap[index] === 0 && (flags[index] & CollisionFlag.PL_WALK_N) === CollisionFlag._OPEN) {
                 this.routeX[steps] = x;
                 this.routeZ[steps] = z - 1;
                 steps = (steps + 1) % bufferSize;
@@ -5926,7 +5926,7 @@ export class Client extends GameShell {
             }
 
             index = CollisionMap.index(x, z + 1);
-            if (z < sceneLength - 1 && this.dirMap[index] === 0 && (flags[index] & CollisionFlag.BLOCK_NORTH) === CollisionFlag.OPEN) {
+            if (z < sceneLength - 1 && this.dirMap[index] === 0 && (flags[index] & CollisionFlag.PL_WALK_S) === CollisionFlag._OPEN) {
                 this.routeX[steps] = x;
                 this.routeZ[steps] = z + 1;
                 steps = (steps + 1) % bufferSize;
@@ -5939,9 +5939,9 @@ export class Client extends GameShell {
                 x > 0 &&
                 z > 0 &&
                 this.dirMap[index] === 0 &&
-                (flags[index] & CollisionFlag.BLOCK_SOUTH_WEST) === 0 &&
-                (flags[CollisionMap.index(x - 1, z)] & CollisionFlag.BLOCK_WEST) === CollisionFlag.OPEN &&
-                (flags[CollisionMap.index(x, z - 1)] & CollisionFlag.BLOCK_SOUTH) === CollisionFlag.OPEN
+                (flags[index] & CollisionFlag.PL_WALK_NE) === 0 &&
+                (flags[CollisionMap.index(x - 1, z)] & CollisionFlag.PL_WALK_E) === CollisionFlag._OPEN &&
+                (flags[CollisionMap.index(x, z - 1)] & CollisionFlag.PL_WALK_N) === CollisionFlag._OPEN
             ) {
                 this.routeX[steps] = x - 1;
                 this.routeZ[steps] = z - 1;
@@ -5955,9 +5955,9 @@ export class Client extends GameShell {
                 x < sceneWidth - 1 &&
                 z > 0 &&
                 this.dirMap[index] === 0 &&
-                (flags[index] & CollisionFlag.BLOCK_SOUTH_EAST) === 0 &&
-                (flags[CollisionMap.index(x + 1, z)] & CollisionFlag.BLOCK_EAST) === CollisionFlag.OPEN &&
-                (flags[CollisionMap.index(x, z - 1)] & CollisionFlag.BLOCK_SOUTH) === CollisionFlag.OPEN
+                (flags[index] & CollisionFlag.PL_WALK_NW) === 0 &&
+                (flags[CollisionMap.index(x + 1, z)] & CollisionFlag.PL_WALK_W) === CollisionFlag._OPEN &&
+                (flags[CollisionMap.index(x, z - 1)] & CollisionFlag.PL_WALK_N) === CollisionFlag._OPEN
             ) {
                 this.routeX[steps] = x + 1;
                 this.routeZ[steps] = z - 1;
@@ -5971,9 +5971,9 @@ export class Client extends GameShell {
                 x > 0 &&
                 z < sceneLength - 1 &&
                 this.dirMap[index] === 0 &&
-                (flags[index] & CollisionFlag.BLOCK_NORTH_WEST) === 0 &&
-                (flags[CollisionMap.index(x - 1, z)] & CollisionFlag.BLOCK_WEST) === CollisionFlag.OPEN &&
-                (flags[CollisionMap.index(x, z + 1)] & CollisionFlag.BLOCK_NORTH) === CollisionFlag.OPEN
+                (flags[index] & CollisionFlag.PL_WALK_SE) === 0 &&
+                (flags[CollisionMap.index(x - 1, z)] & CollisionFlag.PL_WALK_E) === CollisionFlag._OPEN &&
+                (flags[CollisionMap.index(x, z + 1)] & CollisionFlag.PL_WALK_S) === CollisionFlag._OPEN
             ) {
                 this.routeX[steps] = x - 1;
                 this.routeZ[steps] = z + 1;
@@ -5987,9 +5987,9 @@ export class Client extends GameShell {
                 x < sceneWidth - 1 &&
                 z < sceneLength - 1 &&
                 this.dirMap[index] === 0 &&
-                (flags[index] & CollisionFlag.BLOCK_NORTH_EAST) === 0 &&
-                (flags[CollisionMap.index(x + 1, z)] & CollisionFlag.BLOCK_EAST) === CollisionFlag.OPEN &&
-                (flags[CollisionMap.index(x, z + 1)] & CollisionFlag.BLOCK_NORTH) === CollisionFlag.OPEN
+                (flags[index] & CollisionFlag.PL_WALK_SW) === 0 &&
+                (flags[CollisionMap.index(x + 1, z)] & CollisionFlag.PL_WALK_W) === CollisionFlag._OPEN &&
+                (flags[CollisionMap.index(x, z + 1)] & CollisionFlag.PL_WALK_S) === CollisionFlag._OPEN
             ) {
                 this.routeX[steps] = x + 1;
                 this.routeZ[steps] = z + 1;
