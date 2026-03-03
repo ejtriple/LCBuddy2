@@ -926,7 +926,7 @@ export default class ClientBuild {
             }
 
             if (loc.wallwidth !== 16) {
-                world?.setDecorOffset(level, x, z, loc.wallwidth);
+                world?.moveDecor(level, x, z, loc.wallwidth);
             }
         } else if (shape === LocShape.WALL_DIAGONAL_CORNER) {
             let model: ModelSource | null;
@@ -1000,7 +1000,7 @@ export default class ClientBuild {
             }
 
             if (loc.wallwidth !== 16) {
-                world?.setDecorOffset(level, x, z, loc.wallwidth);
+                world?.moveDecor(level, x, z, loc.wallwidth);
             }
         } else if (shape === LocShape.WALL_SQUARE_CORNER) {
             let model: ModelSource | null;

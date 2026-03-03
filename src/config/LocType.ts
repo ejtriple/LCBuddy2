@@ -335,15 +335,15 @@ export default class LocType {
         if (this.hillskew) {
             const groundY: number = ((heightSW + heightSE + heightNE + heightNW) / 4) | 0;
 
-            for (let i: number = 0; i < modified.vertexCount; i++) {
-                const x: number = modified.vertexX![i];
-                const z: number = modified.vertexZ![i];
+            for (let i: number = 0; i < modified.numPoints; i++) {
+                const x: number = modified.pointX![i];
+                const z: number = modified.pointZ![i];
 
                 const heightS: number = heightSW + ((((heightSE - heightSW) * (x + 64)) / 128) | 0);
                 const heightN: number = heightNW + ((((heightNE - heightNW) * (x + 64)) / 128) | 0);
                 const y: number = heightS + ((((heightN - heightS) * (z + 64)) / 128) | 0);
 
-                modified.vertexY![i] += y - groundY;
+                modified.pointY![i] += y - groundY;
             }
 
             modified.recalcBoundingCylinder();

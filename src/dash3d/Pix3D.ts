@@ -20,7 +20,7 @@ export default class Pix3D extends Pix2D {
     static activeTexels: (Int32Array | null)[] = new TypedArray1d(50, null);
     static textureCycle: Int32Array = new Int32Array(50);
     static texPal: (Int32Array | null)[] = new TypedArray1d(50, null);
-    static textureCount: number = 0;
+    static numTextures: number = 0;
     static originX: number = 0;
     static originY: number = 0;
     static texelPool: (Int32Array | null)[] | null = null;
@@ -89,7 +89,7 @@ export default class Pix3D extends Pix2D {
     }
 
     static unpackTextures(textures: Jagfile): void {
-        this.textureCount = 0;
+        this.numTextures = 0;
 
         for (let i: number = 0; i < 50; i++) {
             try {
@@ -101,7 +101,7 @@ export default class Pix3D extends Pix2D {
                     this.textures[i]?.trim();
                 }
 
-                this.textureCount++;
+                this.numTextures++;
             } catch (_e) {
                 // empty
             }
@@ -157,7 +157,7 @@ export default class Pix3D extends Pix2D {
         } else {
             let cycle: number = 0;
             let selected: number = -1;
-            for (let t: number = 0; t < this.textureCount; t++) {
+            for (let t: number = 0; t < this.numTextures; t++) {
                 if (this.activeTexels[t] && (this.textureCycle[t] < cycle || selected === -1)) {
                     cycle = this.textureCycle[t];
                     selected = t;

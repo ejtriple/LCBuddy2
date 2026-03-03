@@ -1182,7 +1182,7 @@ export class Client extends GameShell {
                 distance[x] = (offset * sin) >> 16;
             }
 
-            World.init(distance, 500, 800, 512, 334);
+            World.resetVisCalc(distance, 500, 800, 512, 334);
             WordFilter.unpack(wordenc);
 
             setInterval(() => {
