@@ -3,7 +3,7 @@ import Pix32 from '#/graphics/Pix32.js';
 import Pix2D from '#/graphics/Pix2D.js';
 import Pix8 from '#/graphics/Pix8.js';
 import PixFont from '#/graphics/PixFont.js';
-import Jagfile from '#/io/Jagfile.js';
+import JagFile from '#/io/JagFile.js';
 import Packet from '#/io/Packet.js';
 import { TypedArray1d, TypedArray2d } from '#/util/Arrays.js';
 import { downloadUrl, sleep } from '#/util/JsUtil.js';
@@ -189,10 +189,10 @@ export class MapView extends GameShell {
         this.keyHeight = this.sHei - this.keyY - 20;
         this.overviewX = this.sWid - this.overviewWidth - 5;
         this.overviewY = this.sHei - this.overviewHeight - 20;
-        this.redrawScreen = true;
+        this.fullredraw = true;
         canvas.style.cursor = 'grab';
 
-        const worldmap: Jagfile = await this.loadWorldmap();
+        const worldmap: JagFile = await this.loadWorldmap();
 
         await this.messageBox('Please wait... Rendering Map', 100);
 
@@ -676,9 +676,9 @@ export class MapView extends GameShell {
 
     // ----
 
-    worldmap: Jagfile | null = null;
+    worldmap: JagFile | null = null;
 
-    async loadWorldmap(): Promise<Jagfile> {
+    async loadWorldmap(): Promise<JagFile> {
         if (this.worldmap) {
             return this.worldmap;
         }
@@ -706,7 +706,7 @@ export class MapView extends GameShell {
             }
         }
 
-        this.worldmap = new Jagfile(data);
+        this.worldmap = new JagFile(data);
         return this.worldmap;
     }
 

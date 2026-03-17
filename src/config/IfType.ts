@@ -1,4 +1,4 @@
-import Jagfile from '#/io/Jagfile.js';
+import JagFile from '#/io/JagFile.js';
 import Packet from '#/io/Packet.js';
 
 import Model from '#/dash3d/Model.js';
@@ -100,7 +100,7 @@ export default class IfType {
     targetMask: number = -1;
     buttonText: string | null = null;
 
-    static init(interfaces: Jagfile, media: Jagfile | null, fonts: PixFont[]): void {
+    static init(interfaces: JagFile, media: JagFile | null, fonts: PixFont[]): void {
         this.spriteCache = new LruCache(50000);
 
         const data: Packet = new Packet(interfaces.read('data'));
@@ -377,7 +377,7 @@ export default class IfType {
             return model;
         }
 
-        const tmp: Model = Model.copyForAnim(model, true, AnimFrame.shareAlpha(primaryFrame) && AnimFrame.shareAlpha(secondaryFrame), false);
+        const tmp: Model = Model.copyForAnim(model, true, AnimFrame.animateTransparencies(primaryFrame) && AnimFrame.animateTransparencies(secondaryFrame), false);
         if (primaryFrame !== -1 || secondaryFrame !== -1) {
             tmp.prepareAnim();
         }
@@ -429,7 +429,7 @@ export default class IfType {
         }
     }
 
-    private static getSprite(media: Jagfile, name: string, spriteIndex: number): Pix32 | null {
+    private static getSprite(media: JagFile, name: string, spriteIndex: number): Pix32 | null {
         const uid: bigint = (JString.hashCode(name) << 8n) | BigInt(spriteIndex);
 
         if (this.spriteCache) {

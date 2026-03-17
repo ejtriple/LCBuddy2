@@ -9,7 +9,7 @@ export default class WordPack {
         ' ', '!', '?', '.', ',', ':', ';', '(', ')', '-', '&', '*', '\\', '\'', '@', '#', '+', '=', '£', '$', '%', '"', '[', ']'
     ];
 
-    private static charBuffer: string[] = [];
+    private static builder: string[] = [];
 
     static unpack(word: Packet, length: number): string {
         let pos: number = 0;
@@ -19,35 +19,35 @@ export default class WordPack {
             const value: number = word.g1();
             nibble = (value >> 4) & 0xf;
             if (carry !== -1) {
-                this.charBuffer[pos++] = this.TABLE[(carry << 4) + nibble - 195];
+                this.builder[pos++] = this.TABLE[(carry << 4) + nibble - 195];
                 carry = -1;
             } else if (nibble < 13) {
-                this.charBuffer[pos++] = this.TABLE[nibble];
+                this.builder[pos++] = this.TABLE[nibble];
             } else {
                 carry = nibble;
             }
             nibble = value & 0xf;
             if (carry !== -1) {
-                this.charBuffer[pos++] = this.TABLE[(carry << 4) + nibble - 195];
+                this.builder[pos++] = this.TABLE[(carry << 4) + nibble - 195];
                 carry = -1;
             } else if (nibble < 13) {
-                this.charBuffer[pos++] = this.TABLE[nibble];
+                this.builder[pos++] = this.TABLE[nibble];
             } else {
                 carry = nibble;
             }
         }
         let uppercase: boolean = true;
         for (let index: number = 0; index < pos; index++) {
-            const char: string = this.charBuffer[index];
+            const char: string = this.builder[index];
             if (uppercase && char >= 'a' && char <= 'z') {
-                this.charBuffer[index] = char.toUpperCase();
+                this.builder[index] = char.toUpperCase();
                 uppercase = false;
             }
             if (char === '.' || char === '!') {
                 uppercase = true;
             }
         }
-        return this.charBuffer.slice(0, pos).join('');
+        return this.builder.slice(0, pos).join('');
     }
 
     static pack(word: Packet, str: string): void {

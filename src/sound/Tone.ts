@@ -3,8 +3,6 @@ import Packet from '#/io/Packet.js';
 import Envelope from '#/sound/Envelope.js';
 import Filter from '#/sound/Filter.js';
 
-import JavaRandom from '#/util/JavaRandom.js';
-
 export default class Tone {
     static buf: Int32Array = new Int32Array(22050 * 10);
     static noise: Int32Array = new Int32Array(32768);
@@ -17,9 +15,12 @@ export default class Tone {
     static fOffset: Int32Array = new Int32Array(5);
 
     static {
-        const rand = new JavaRandom(0);
         for (let i = 0; i < 32768; i++) {
-            this.noise[i] = (rand.nextInt() & 0x2) - 1;
+            if (Math.random() > 0.5) {
+                this.noise[i] = 1;
+            } else {
+                this.noise[i] = -1;
+            }
         }
 
         for (let i = 0; i < 32768; i++) {
@@ -233,18 +234,18 @@ export default class Tone {
         }
 
         for (let harmonic = 0; harmonic < 10; harmonic++) {
-            const volume = buf.gsmarts();
+            const volume = buf.gsmart();
             if (volume === 0) {
                 break;
             }
 
             this.harmonicVolume[harmonic] = volume;
-            this.harmonicSemitone[harmonic] = buf.gsmart();
-            this.harmonicDelay[harmonic] = buf.gsmarts();
+            this.harmonicSemitone[harmonic] = buf.gsmarts();
+            this.harmonicDelay[harmonic] = buf.gsmart();
         }
 
-        this.reverbDelay = buf.gsmarts();
-        this.reverbVolume = buf.gsmarts();
+        this.reverbDelay = buf.gsmart();
+        this.reverbVolume = buf.gsmart();
         this.length = buf.g2();
         this.start = buf.g2();
 

@@ -331,7 +331,7 @@ export default class ClientPlayer extends ClientEntity {
             const spotModel = spot.getTempModel2();
 
             if (spotModel != null) {
-                const temp: Model = Model.copyForAnim(spotModel, true, AnimFrame.shareAlpha(this.spotanimFrame), false);
+                const temp: Model = Model.copyForAnim(spotModel, true, AnimFrame.animateTransparencies(this.spotanimFrame), false);
 
                 temp.translate(-this.spotanimHeight, 0, 0);
                 temp.prepareAnim();
@@ -541,7 +541,7 @@ export default class ClientPlayer extends ClientEntity {
         }
 
         const tmp = Model.tempModel;
-        tmp.set(model, AnimFrame.shareAlpha(primaryTransformId) && AnimFrame.shareAlpha(secondaryTransformId));
+        tmp.set(model, AnimFrame.animateTransparencies(primaryTransformId) && AnimFrame.animateTransparencies(secondaryTransformId));
 
         if (primaryTransformId !== -1 && secondaryTransformId !== -1) {
             tmp.maskAnimate(primaryTransformId, secondaryTransformId, SeqType.list[this.primaryAnim].walkmerge);

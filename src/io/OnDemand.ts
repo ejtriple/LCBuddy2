@@ -7,7 +7,7 @@ import LinkList2 from '#/datastruct/LinkList2.js';
 import LinkList from '#/datastruct/LinkList.js';
 
 import ClientStream from '#/io/ClientStream.js';
-import type Jagfile from '#/io/Jagfile.js';
+import type JagFile from '#/io/JagFile.js';
 import OnDemandProvider from '#/io/OnDemandProvider.js';
 import OnDemandRequest from '#/io/OnDemandRequest.js';
 import Packet from '#/io/Packet.js';
@@ -26,13 +26,13 @@ export default class OnDemand extends OnDemandProvider {
     mapIndex: number[] = [];
     mapLand: number[] = [];
     mapLoc: number[] = [];
-    mapMembers: number[] = [];
+    mapFree: number[] = [];
     animFrameIndex: number[] = [];
     midiJingle: number[] = [];
     running: boolean = true;
     app: Client;
     active: boolean = false;
-    importantCount: number = 0;
+    urgentCount: number = 0;
     requestCount: number = 0;
     requests: LinkList2<OnDemandRequest> = new LinkList2();
     queue: LinkList<OnDemandRequest> = new LinkList();
@@ -54,7 +54,7 @@ export default class OnDemand extends OnDemandProvider {
     current: OnDemandRequest | null = null;
     stream: ClientStream | null = null;
 
-    constructor(versionlist: Jagfile, app: Client) {
+    constructor(versionlist: JagFile, app: Client) {
         super();
 
         const version: string[] = ['model_version', 'anim_version', 'midi_version', 'map_version'];
@@ -114,13 +114,13 @@ export default class OnDemand extends OnDemandProvider {
             this.mapIndex = new Array(count);
             this.mapLand = new Array(count);
             this.mapLoc = new Array(count);
-            this.mapMembers = new Array(count);
+            this.mapFree = new Array(count);
 
             for (let i = 0; i < count; i++) {
                 this.mapIndex[i] = buf.g2();
                 this.mapLand[i] = buf.g2();
                 this.mapLoc[i] = buf.g2();
-                this.mapMembers[i] = buf.g1();
+                this.mapFree[i] = buf.g1();
             }
         }
 
@@ -181,7 +181,7 @@ export default class OnDemand extends OnDemandProvider {
     async prefetchMaps(members: boolean) {
         const count = this.mapIndex.length;
         for (let i = 0; i < count; i++) {
-            if (members || this.mapMembers[i] !== 0) {
+            if (members || this.mapFree[i] !== 0) {
                 await this.prefetchPriority(3, this.mapLoc[i], 2);
                 await this.prefetchPriority(3, this.mapLand[i], 2);
             }
@@ -300,11 +300,11 @@ export default class OnDemand extends OnDemandProvider {
             await this.handleQueue();
             await this.handlePending();
 
-            if (this.importantCount === 0 && i >= 5) {
+            if (this.urgentCount === 0 && i >= 5) {
                 break;
             }
 
-            await this.handleExtras();
+            await this.handleExtra();
             await this.read();
         }
 
@@ -393,18 +393,18 @@ export default class OnDemand extends OnDemandProvider {
     }
 
     async handlePending() {
-        this.importantCount = 0;
+        this.urgentCount = 0;
         this.requestCount = 0;
 
         for (let req = this.pending.head(); req !== null; req = this.pending.next()) {
             if (req.urgent) {
-                this.importantCount++;
+                this.urgentCount++;
             } else {
                 this.requestCount++;
             }
         }
 
-        while (this.importantCount < 10) {
+        while (this.urgentCount < 10) {
             const req = this.missing.popFront();
             if (req === null) {
                 break;
@@ -416,14 +416,14 @@ export default class OnDemand extends OnDemandProvider {
 
             this.priorities[req.archive][req.file] = 0;
             this.pending.push(req);
-            this.importantCount++;
+            this.urgentCount++;
             await this.send(req);
             this.active = true;
         }
     }
 
-    async handleExtras() {
-        while (this.importantCount === 0 && this.requestCount < 10) {
+    async handleExtra() {
+        while (this.urgentCount === 0 && this.requestCount < 10) {
             if (this.topPriority === 0) {
                 return;
             }

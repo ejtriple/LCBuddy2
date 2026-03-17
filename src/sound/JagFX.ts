@@ -15,7 +15,7 @@ export default class JagFX {
     loopBegin: number = 0;
     loopEnd: number = 0;
 
-    static unpack(buf: Packet): void {
+    static init(buf: Packet): void {
         while (true) {
             const id = buf.g2();
             if (id === 65535) {

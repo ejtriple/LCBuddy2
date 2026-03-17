@@ -1,7 +1,7 @@
 import { bunzip2 } from '#/io/BZip2.js';
 import Packet from '#/io/Packet.js';
 
-export default class Jagfile {
+export default class JagFile {
     static genHash(name: string): number {
         let hash: number = 0;
         name = name.toUpperCase();
@@ -51,7 +51,7 @@ export default class Jagfile {
     }
 
     read(name: string): Uint8Array | null {
-        const hash: number = Jagfile.genHash(name);
+        const hash: number = JagFile.genHash(name);
         const index: number = this.fileHash.indexOf(hash);
         if (index === -1) {
             return null;

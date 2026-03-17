@@ -53,7 +53,7 @@ export default class Filter {
             }
 
             if (migration !== 0 || this.unities[1] !== this.unities[0]) {
-                envelope.unpackPoints(buf);
+                envelope.loadPoints(buf);
             }
         } else {
             this.unities[0] = this.unities[1] = 0;

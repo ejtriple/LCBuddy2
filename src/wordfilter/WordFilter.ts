@@ -1,4 +1,4 @@
-import Jagfile from '#/io/Jagfile.js';
+import JagFile from '#/io/JagFile.js';
 import Packet from '#/io/Packet.js';
 
 export default class WordFilter {
@@ -27,12 +27,12 @@ export default class WordFilter {
 
     private static readonly tlds: Uint16Array[] = [];
     private static readonly tldTypes: number[] = [];
-    private static readonly bads: Uint16Array[] = [];
+    private static readonly badWords: Uint16Array[] = [];
     private static readonly badCombinations: number[][][] = [];
     private static readonly domains: Uint16Array[] = [];
     private static readonly fragments: number[] = [];
 
-    static unpack(wordenc: Jagfile): void {
+    static unpack(wordenc: JagFile): void {
         const fragments: Packet = new Packet(wordenc.read('fragmentsenc.txt'));
         const bad: Packet = new Packet(wordenc.read('badenc.txt'));
         const domain: Packet = new Packet(wordenc.read('domainenc.txt'));
@@ -82,7 +82,7 @@ export default class WordFilter {
     private static readBadWords(packet: Packet): void {
         const count: number = packet.g4();
         for (let index: number = 0; index < count; index++) {
-            this.bads[index] = new Uint16Array(packet.g1()).map((): number => packet.g1());
+            this.badWords[index] = new Uint16Array(packet.g1()).map((): number => packet.g1());
             const combos: number[][] = new Array(packet.g1()).fill([]).map((): number[] => [packet.g1b(), packet.g1b()]);
             if (combos.length > 0) {
                 this.badCombinations[index] = combos;
@@ -116,8 +116,8 @@ export default class WordFilter {
 
     private static filterBadWords(chars: string[]): void {
         for (let comboIndex: number = 0; comboIndex < 2; comboIndex++) {
-            for (let index: number = this.bads.length - 1; index >= 0; index--) {
-                this.filterBadCombinations(this.badCombinations[index], chars, this.bads[index]);
+            for (let index: number = this.badWords.length - 1; index >= 0; index--) {
+                this.filterBadCombinations(this.badCombinations[index], chars, this.badWords[index]);
             }
         }
     }

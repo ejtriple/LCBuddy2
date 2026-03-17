@@ -162,7 +162,6 @@ export default class Model extends ModelSource {
         const dataLengthFaceIndex = trailer.g2();
 
         let pos = 0;
-
         meta.vertexOrderOffset = pos;
         pos += meta.numPoints;
 
@@ -300,17 +299,17 @@ export default class Model extends ModelSource {
 
             let x = 0;
             if ((order & 0x1) !== 0) {
-                x = point2.gsmart();
+                x = point2.gsmarts();
             }
 
             let y = 0;
             if ((order & 0x2) !== 0) {
-                y = point3.gsmart();
+                y = point3.gsmarts();
             }
 
             let z = 0;
             if ((order & 0x4) !== 0) {
-                z = point4.gsmart();
+                z = point4.gsmarts();
             }
 
             model.pointX[v] = dx + x;
@@ -375,25 +374,25 @@ export default class Model extends ModelSource {
             const order = vertex2.g1();
 
             if (order === 1) {
-                a = vertex1.gsmart() + last;
-                b = vertex1.gsmart() + a;
-                c = vertex1.gsmart() + b;
+                a = vertex1.gsmarts() + last;
+                b = vertex1.gsmarts() + a;
+                c = vertex1.gsmarts() + b;
                 last = c;
             } else if (order === 2) {
                 // a = a;
                 b = c;
-                c = vertex1.gsmart() + last;
+                c = vertex1.gsmarts() + last;
                 last = c;
             } else if (order === 3) {
                 a = c;
                 // b = b;
-                c = vertex1.gsmart() + last;
+                c = vertex1.gsmarts() + last;
                 last = c;
             } else if (order === 4) {
                 const tmp = a;
                 a = b;
                 b = tmp;
-                c = vertex1.gsmart() + last;
+                c = vertex1.gsmarts() + last;
                 last = c;
             }
 
@@ -1151,18 +1150,18 @@ export default class Model extends ModelSource {
             return;
         }
 
-        const skeleton: AnimBase | null = transform.base;
+        const base: AnimBase | null = transform.base;
         Model.oX = 0;
         Model.oY = 0;
         Model.oZ = 0;
 
         for (let i: number = 0; i < transform.size; i++) {
-            if (!transform.ti || !transform.tx || !transform.ty || !transform.tz || !skeleton || !skeleton.labels || !skeleton.type) {
+            if (!transform.ti || !transform.tx || !transform.ty || !transform.tz || !base || !base.labels || !base.type) {
                 continue;
             }
 
-            const base: number = transform.ti[i];
-            this.animate2(transform.tx[i], transform.ty[i], transform.tz[i], skeleton.labels[base], skeleton.type[base]);
+            const ti: number = transform.ti[i];
+            this.animate2(transform.tx[i], transform.ty[i], transform.tz[i], base.labels[ti], base.type[ti]);
         }
     }
 

@@ -282,9 +282,9 @@ export default class ClientBuild {
                                     let t2Colour: number;
                                     let overlay: number;
                                     if (texture >= 0) {
-                                        overlay = Pix3D.getAverageTextureRgb(texture);
+                                        overlay = Pix3D.getTextureAverage(texture);
                                         t2Colour = -1;
-                                    } else if (flo.rgb === Colour.MAGENTA) {
+                                    } else if (flo.colour === Colour.MAGENTA) {
                                         overlay = 0;
                                         t2Colour = -2;
                                         texture = -1;
@@ -641,7 +641,7 @@ export default class ClientBuild {
         let locId = -1;
 
         while (true) {
-            const deltaId = buf.gsmarts();
+            const deltaId = buf.gsmart();
             if (deltaId == 0) {
                 break;
             }
@@ -653,14 +653,14 @@ export default class ClientBuild {
 
             while (true) {
                 if (skip) {
-                    const deltaPos = buf.gsmarts();
+                    const deltaPos = buf.gsmart();
                     if (deltaPos == 0) {
                         break;
                     }
 
                     buf.g1();
                 } else {
-                    const deltaPos = buf.gsmarts();
+                    const deltaPos = buf.gsmart();
                     if (deltaPos == 0) {
                         break;
                     }
@@ -694,7 +694,7 @@ export default class ClientBuild {
     static prefetchLocations(buf: Packet, od: OnDemand) {
         let locId = -1;
         while (true) {
-            const deltaId = buf.gsmarts();
+            const deltaId = buf.gsmart();
             if (deltaId == 0) {
                 return;
             }
@@ -705,7 +705,7 @@ export default class ClientBuild {
             loc.prefetchModelAll(od);
 
             while (true) {
-                const deltaPos = buf.gsmarts();
+                const deltaPos = buf.gsmart();
                 if (deltaPos == 0) {
                     break;
                 }
@@ -720,7 +720,7 @@ export default class ClientBuild {
         let locId: number = -1;
 
         while (true) {
-            const deltaId: number = buf.gsmarts();
+            const deltaId: number = buf.gsmart();
             if (deltaId === 0) {
                 return;
             }
@@ -729,7 +729,7 @@ export default class ClientBuild {
 
             let locPos: number = 0;
             while (true) {
-                const deltaPos: number = buf.gsmarts();
+                const deltaPos: number = buf.gsmart();
                 if (deltaPos === 0) {
                     break;
                 }

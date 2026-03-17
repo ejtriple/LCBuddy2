@@ -14,7 +14,7 @@ export default abstract class GameShell {
     protected fps: number = 0;
     protected debug: boolean = false;
     protected drawArea: PixMap | null = null;
-    protected redrawScreen: boolean = true;
+    protected fullredraw: boolean = true;
     protected focus: boolean = true;
 
     public idleTimer: number = performance.now();
@@ -256,10 +256,10 @@ export default abstract class GameShell {
         const width: number = this.sWid;
         const height: number = this.sHei;
 
-        if (this.redrawScreen) {
+        if (this.fullredraw) {
             canvas2d.fillStyle = 'black';
             canvas2d.fillRect(0, 0, width, height);
-            this.redrawScreen = false;
+            this.fullredraw = false;
         }
 
         const y: number = height / 2 - 18;
@@ -492,7 +492,7 @@ export default abstract class GameShell {
 
     private onfocus(_e: FocusEvent) {
         this.focus = true;
-        this.redrawScreen = true;
+        this.fullredraw = true;
         this.refresh();
     }
 

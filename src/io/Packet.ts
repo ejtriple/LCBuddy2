@@ -165,12 +165,11 @@ export default class Packet extends Linkable2 {
         return result;
     }
 
-    gsmart(): number {
+    gsmarts(): number {
         return this.view.getUint8(this.pos) < 0x80 ? this.g1() - 0x40 : this.g2() - 0xc000;
     }
 
-    // signed
-    gsmarts(): number {
+    gsmart(): number {
         return this.view.getUint8(this.pos) < 0x80 ? this.g1() : this.g2() - 0x8000;
     }
 
@@ -190,7 +189,7 @@ export default class Packet extends Linkable2 {
         this.pos += length;
     }
 
-    pIsaac(opcode: number): void {
+    p1Enc(opcode: number): void {
         this.view.setUint8(this.pos++, (opcode + (this.random?.nextInt ?? 0)) & 0xff);
     }
 
