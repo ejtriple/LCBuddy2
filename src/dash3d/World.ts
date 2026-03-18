@@ -293,6 +293,10 @@ export default class World {
     }
 
     setGroundDecor(model: ModelSource | null, tileLevel: number, tileX: number, tileZ: number, y: number, typecode: number, typecode2: number): void {
+        if (model === null) {
+            return;
+        }
+
         if (!this.squares[tileLevel][tileX][tileZ]) {
             this.squares[tileLevel][tileX][tileZ] = new Square(tileLevel, tileX, tileZ);
         }
