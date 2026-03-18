@@ -67,6 +67,7 @@ import WordFilter from '#/wordfilter/WordFilter.js';
 import WordPack from '#/wordfilter/WordPack.js';
 
 import JagFX from '#/sound/JagFX.js';
+import Skill from '#/client/Skill.js';
 
 const CLIENT_VERSION = 274;
 
@@ -426,9 +427,9 @@ export class Client extends GameShell {
     private projectiles: LinkList<ClientProj> = new LinkList();
     private spotanims: LinkList<MapSpotAnim> = new LinkList();
 
-    private statEffectiveLevel: number[] = [];
-    private statBaseLevel: number[] = [];
-    private statXP: number[] = [];
+    private statEffectiveLevel: Int32Array = new Int32Array(Skill.count);
+    private statBaseLevel: Int32Array = new Int32Array(Skill.count);
+    private statXP: Int32Array = new Int32Array(Skill.count);
 
     private oneMouseButton: number = 0;
     private isMenuOpen: boolean = false;
@@ -10672,13 +10673,10 @@ export class Client extends GameShell {
                     register = this.localPlayer?.combatLevel || 0;
                 } else if (opcode === 9) {
                     // total level
-                    for (let i: number = 0; i < 19; i++) {
-                        if (i === 18) {
-                            // runecrafting
-                            i = 20;
+                    for (let i: number = 0; i < Skill.count; i++) {
+                        if (Skill.used[i]) {
+                            register += this.statBaseLevel[i];
                         }
-
-                        register += this.statBaseLevel[i];
                     }
                 } else if (opcode === 10) {
                     // inv_contains {interface id} {obj id}
