@@ -2,6 +2,7 @@ import Packet from '#/io/Packet.js';
 
 import Envelope from '#/sound/Envelope.js';
 import Filter from '#/sound/Filter.js';
+import { mulShift16 } from '#/util/JsUtil.js';
 
 export default class Tone {
     static buf: Int32Array = new Int32Array(22050 * 10);
@@ -166,6 +167,87 @@ export default class Tone {
 
             for (let sample = start; sample < sampleCount; sample++) {
                 Tone.buf[sample] += ((Tone.buf[sample - start] * this.reverbVolume) / 100) | 0;
+            }
+        }
+
+        if (this.filter && this.filterRange && (this.filter.pairs[0] > 0 || this.filter.pairs[1] > 0)) {
+            this.filterRange.genInit();
+
+            let range: number = this.filterRange.genNext(sampleCount + 1);
+            let coeff0: number = this.filter.calculateCoeffs(0, range / 65536.0);
+            let coeff1: number = this.filter.calculateCoeffs(1, range / 65536.0);
+
+            if (sampleCount >= coeff0 + coeff1) {
+                let sample = 0;
+                let limit = coeff1;
+
+                if (coeff1 > sampleCount - coeff0) {
+                    limit = sampleCount - coeff0;
+                }
+
+                while (sample < limit) {
+                    let value = mulShift16(Tone.buf[sample + coeff0], Filter.reduceCoeffInt);
+
+                    for (let i = 0; i < coeff0; i++) {
+                        value += mulShift16(Tone.buf[sample + coeff0 - i - 1], Filter.coeffInt[0][i]);
+                    }
+
+                    for (let i = 0; i < sample; i++) {
+                        value -= mulShift16(Tone.buf[sample - i - 1], Filter.coeffInt[1][i]);
+                    }
+
+                    Tone.buf[sample] = value;
+                    range = this.filterRange.genNext(sampleCount + 1);
+                    sample++;
+                }
+
+                const step = 128;
+                let next = step;
+
+                while (true) {
+                    if (next > sampleCount - coeff0) {
+                        next = sampleCount - coeff0;
+                    }
+
+                    while (sample < next) {
+                        let value = mulShift16(Tone.buf[sample + coeff0], Filter.reduceCoeffInt);
+
+                        for (let i = 0; i < coeff0; i++) {
+                            value += mulShift16(Tone.buf[sample + coeff0 - i - 1], Filter.coeffInt[0][i]);
+                        }
+
+                        for (let i = 0; i < coeff1; i++) {
+                            value -= mulShift16(Tone.buf[sample - i - 1], Filter.coeffInt[1][i]);
+                        }
+
+                        Tone.buf[sample] = value;
+                        range = this.filterRange.genNext(sampleCount + 1);
+                        sample++;
+                    }
+
+                    if (sample >= sampleCount - coeff0) {
+                        while (sample < sampleCount) {
+                            let value = 0;
+
+                            for (let i = sample + coeff0 - sampleCount; i < coeff0; i++) {
+                                value += mulShift16(Tone.buf[sample + coeff0 - i - 1], Filter.coeffInt[0][i]);
+                            }
+
+                            for (let i = 0; i < coeff1; i++) {
+                                value -= mulShift16(Tone.buf[sample - i - 1], Filter.coeffInt[1][i]);
+                            }
+
+                            Tone.buf[sample] = value;
+                            this.filterRange.genNext(sampleCount + 1);
+                            sample++;
+                        }
+                        break;
+                    }
+
+                    coeff0 = this.filter.calculateCoeffs(0, range / 65536.0);
+                    coeff1 = this.filter.calculateCoeffs(1, range / 65536.0);
+                    next += step;
+                }
             }
         }
 
