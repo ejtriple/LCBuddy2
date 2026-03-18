@@ -694,9 +694,9 @@ export default class World {
                             continue;
                         }
 
-                        const tileSizeX: number = sprite.maxTileX + 1 - sprite.minTileX;
-                        const tileSizeZ: number = sprite.maxTileZ + 1 - sprite.minTileZ;
-                        this.modelShareLight(model, sprite.model as Model, (sprite.minTileX - tileX) * 128 + (tileSizeX - tileSizeX) * 64, offsetY, (sprite.minTileZ - tileZ) * 128 + (tileSizeZ - tileSizeZ) * 64, allowFaceRemoval);
+                        const sizeX: number = sprite.maxTileX + 1 - sprite.minTileX;
+                        const sizeZ: number = sprite.maxTileZ + 1 - sprite.minTileZ;
+                        this.modelShareLight(model, sprite.model as Model, (sprite.minTileX - tileX) * 128 + (sizeX - tileSizeX) * 64, offsetY, (sprite.minTileZ - tileZ) * 128 + (sizeZ - tileSizeZ) * 64, allowFaceRemoval);
                     }
                 }
             }
