@@ -981,7 +981,7 @@ export default class ClientBuild {
 
             if (loc.occlude) {
                 if (angle === LocAngle.WEST) {
-                    this.mapo[level][x][z] |= 0x109;
+                    this.mapo[level][x][z] |= 0x249;
                     this.mapo[level][x][z + 1] |= 0x492;
                 } else if (angle === LocAngle.NORTH) {
                     this.mapo[level][x][z + 1] |= 0x492;
