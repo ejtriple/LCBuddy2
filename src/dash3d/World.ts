@@ -201,6 +201,13 @@ export default class World {
             const tile: Square | null = this.squares[level][stx][stz];
             if (tile) {
                 tile.level--;
+
+                for (let i = 0; i < tile.spriteCount; i++) {
+                    const sprite = tile.sprites[i];
+                    if (sprite && ((sprite.typecode >> 29) & 0x3) == 2 && sprite.minTileX == stx && sprite.minTileZ == stz) {
+                        sprite.level--;
+                    }
+                }
             }
         }
 
@@ -495,37 +502,6 @@ export default class World {
         this.dynamicCount = 0;
     }
 
-    wallType(level: number, x: number, z: number): number {
-        const tile: Square | null = this.squares[level][x][z];
-        return !tile || !tile.wall ? 0 : tile.wall.typecode;
-    }
-
-    decorType(level: number, z: number, x: number): number {
-        const tile: Square | null = this.squares[level][x][z];
-        return !tile || !tile.decor ? 0 : tile.decor.typecode;
-    }
-
-    sceneType(level: number, x: number, z: number): number {
-        const tile: Square | null = this.squares[level][x][z];
-        if (!tile) {
-            return 0;
-        }
-
-        for (let l: number = 0; l < tile.spriteCount; l++) {
-            const sprite: Sprite | null = tile.sprites[l];
-            if (sprite && ((sprite.typecode >> 29) & 0x3) === 2 && sprite.minTileX === x && sprite.minTileZ === z) {
-                return sprite.typecode;
-            }
-        }
-
-        return 0;
-    }
-
-    gdType(level: number, x: number, z: number): number {
-        const tile: Square | null = this.squares[level][x][z];
-        return !tile || !tile.groundDecor ? 0 : tile.groundDecor.typecode;
-    }
-
     getWall(level: number, x: number, z: number): Wall | null {
         const tile: Square | null = this.squares[level][x][z];
         return !tile || !tile.wall ? null : tile.wall;
@@ -555,6 +531,37 @@ export default class World {
     getGd(level: number, x: number, z: number): GroundDecor | null {
         const tile: Square | null = this.squares[level][x][z];
         return !tile || !tile.groundDecor ? null : tile.groundDecor;
+    }
+
+    wallType(level: number, x: number, z: number): number {
+        const tile: Square | null = this.squares[level][x][z];
+        return !tile || !tile.wall ? 0 : tile.wall.typecode;
+    }
+
+    decorType(level: number, z: number, x: number): number {
+        const tile: Square | null = this.squares[level][x][z];
+        return !tile || !tile.decor ? 0 : tile.decor.typecode;
+    }
+
+    sceneType(level: number, x: number, z: number): number {
+        const tile: Square | null = this.squares[level][x][z];
+        if (!tile) {
+            return 0;
+        }
+
+        for (let l: number = 0; l < tile.spriteCount; l++) {
+            const sprite: Sprite | null = tile.sprites[l];
+            if (sprite && ((sprite.typecode >> 29) & 0x3) === 2 && sprite.minTileX === x && sprite.minTileZ === z) {
+                return sprite.typecode;
+            }
+        }
+
+        return 0;
+    }
+
+    gdType(level: number, x: number, z: number): number {
+        const tile: Square | null = this.squares[level][x][z];
+        return !tile || !tile.groundDecor ? 0 : tile.groundDecor.typecode;
     }
 
     typeCode2(level: number, x: number, z: number, typecode: number): number {
