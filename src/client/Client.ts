@@ -689,6 +689,61 @@ export class Client extends GameShell {
         }
     }
 
+    private async getJagChecksums() {
+        let wait = 5;
+        let retries = 0;
+
+        this.jagChecksum[8] = 0;
+
+        while (this.jagChecksum[8] === 0) {
+            let error = 'Unknown problem';
+            await this.messageBox('Connecting to web server', 10);
+
+            try {
+                const checksums: Packet = new Packet(await downloadUrl('/crc'));
+                for (let i: number = 0; i < 9; i++) {
+                    this.jagChecksum[i] = checksums.g4();
+                }
+
+                const expected = checksums.g4();
+                let calculated = 1234;
+                for (let i = 0; i < 9; i++) {
+                    calculated = (calculated << 1) + this.jagChecksum[i];
+                }
+
+                if (expected !== calculated) {
+                    error = 'checksum problem';
+                    this.jagChecksum[8] = 0;
+                }
+            } catch (err) {
+                error = 'connection problem';
+                this.jagChecksum[8] = 0;
+            }
+
+            if (this.jagChecksum[8] === 0) {
+                retries++;
+
+                for (let remaining = wait; remaining > 0; remaining--) {
+                    if (retries >= 10) {
+                        await this.messageBox('Game updated - please reload page', 10);
+                        remaining = 10;
+                    } else {
+                        await this.messageBox(`${error} - Will retry in ${remaining} secs.`, 10);
+                    }
+
+                    await sleep(1000);
+                }
+
+                wait *= 2;
+                if (wait > 60) {
+                    wait = 60;
+                }
+
+                // the java client toggles a "JAGGRAB" HTTP fallback here
+            }
+        }
+    }
+
     private async getJagFile(displayName: string, progress: number, filename: string, index: number): Promise<JagFile> {
         const crc = this.jagChecksum[index];
 
@@ -784,12 +839,7 @@ export class Client extends GameShell {
         }
 
         try {
-            await this.messageBox('Connecting to web server', 10);
-
-            const checksums: Packet = new Packet(await downloadUrl('/crc'));
-            for (let i: number = 0; i < 9; i++) {
-                this.jagChecksum[i] = checksums.g4();
-            }
+            await this.getJagChecksums();
 
             this.title = await this.getJagFile('title screen', 25, 'title', 1);
             this.p11 = PixFont.depack(this.title, 'p11_full', false);
