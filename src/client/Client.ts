@@ -708,7 +708,7 @@ export class Client extends GameShell {
                 const expected = checksums.g4();
                 let calculated = 1234;
                 for (let i = 0; i < 9; i++) {
-                    calculated = (calculated << 1) + this.jagChecksum[i];
+                    calculated = ((calculated << 1) + this.jagChecksum[i]) | 0;
                 }
 
                 if (expected !== calculated) {
