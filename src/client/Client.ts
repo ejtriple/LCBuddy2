@@ -7309,14 +7309,13 @@ export class Client extends GameShell {
                     songId = -1;
                 }
 
-                if (this.nextMidiSong != songId && this.midiActive && !Client.lowMem) {
+                if (this.nextMidiSong != songId && this.midiActive && !Client.lowMem && this.nextMusicDelay === 0) {
                     this.midiSong = songId;
                     this.midiFading = true;
                     this.onDemand?.request(2, this.midiSong);
                 }
 
                 this.nextMidiSong = songId;
-                this.nextMusicDelay = 0;
 
                 this.ptype = -1;
                 return true;
