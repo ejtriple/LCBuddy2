@@ -1,11 +1,13 @@
 import { playWave, setWaveVolume } from '#3rdparty/audio.js';
 import { stopMidi, setMidiVolume, playMidi } from '#3rdparty/tinymidipcm.js';
 
+import ClientBuild from '#/client/ClientBuild.js';
 import { ClientCode } from '#/client/ClientCode.js';
 import GameShell from '#/client/GameShell.js';
 import { MiniMenuAction } from '#/client/MiniMenuAction.js';
 import MobileKeyboard from '#/client/MobileKeyboard.js';
 import MouseTracking from '#/client/MouseTracking.js';
+import Skill from '#/client/Skill.js';
 
 import FloType from '#/config/FloType.js';
 import SeqType, { PostanimMove, PreanimMove, RestartMode } from '#/config/SeqType.js';
@@ -19,7 +21,6 @@ import VarBitType from '#/config/VarBitType.js';
 import IfType from '#/config/IfType.js';
 import { ComponentType, ButtonType } from '#/config/IfType.js';
 
-import ClientBuild from '#/client/ClientBuild.js';
 import ClientEntity from '#/dash3d/ClientEntity.js';
 import ClientLocAnim from '#/dash3d/ClientLocAnim.js';
 import ClientNpc, { NpcUpdate } from '#/dash3d/ClientNpc.js';
@@ -63,11 +64,12 @@ import Packet from '#/io/Packet.js';
 import OnDemand from '#/io/OnDemand.js';
 import { ServerProt, ServerProtSizes } from '#/io/ServerProt.js';
 
+import { reverseDnsLookup } from '#/util/WebDns.js';
+
 import WordFilter from '#/wordfilter/WordFilter.js';
 import WordPack from '#/wordfilter/WordPack.js';
 
 import JagFX from '#/sound/JagFX.js';
-import Skill from '#/client/Skill.js';
 
 const CLIENT_VERSION = 274;
 
@@ -164,6 +166,8 @@ export class Client extends GameShell {
     private hintOffsetZ: number = 0;
 
     private lastAddress: number = 0;
+    private dnsReq: string | null = null;
+    private dnsReqLock: boolean = false;
     private daysSinceLastLogin: number = 0;
     private daysSinceRecoveriesChanged: number = 0;
     private unreadMessages: number = 0;
@@ -2072,6 +2076,7 @@ export class Client extends GameShell {
                 this.staffmodlevel = await this.stream.read();
                 this.mouseTracked = (await this.stream.read()) === 1;
 
+                this.dnsReqLock = false;
                 this.prevMouseClickTime = 0;
                 this.mouseTrackedDelta = 0;
                 this.mouseTracking.length = 0;
@@ -11145,9 +11150,22 @@ export class Client extends GameShell {
                     text = this.daysSinceLastLogin + ' days ago';
                 }
 
-                // Show IP only if not 127.0.0.1 (servers may opt into privacy, making it needless info)
-                const ipStr = JString.formatIPv4(this.lastAddress); // would be a DNS lookup if we could...
-                com.text = 'You last logged in ' + text + (ipStr === '127.0.0.1' ? '.' : ' from: ' + ipStr);
+                com.text = `You last logged in ${text}`;
+
+                // custom: we don't have access to the user's DNS resolver in a browser, but we can use DNS over HTTPS (DoH)
+                let ipStr = JString.formatIPv4(this.lastAddress);
+                if (!ipStr.startsWith('127.')) {
+                    // we're using localhost as a privacy flag for now
+                    if (this.dnsReq === null && !this.dnsReqLock) {
+                        this.dnsReqLock = true;
+
+                        reverseDnsLookup(ipStr).then(results => {
+                            this.dnsReq = results[0];
+                        });
+                    }
+
+                    com.text += ` from: ${this.dnsReq ?? ipStr}`;
+                }
             }
         } else if (clientCode === ClientCode.CC_UNREAD_MESSAGES) {
             if (this.unreadMessages === 0) {
