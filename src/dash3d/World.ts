@@ -2323,7 +2323,7 @@ export default class World {
             return this.occluded(sceneX, y1, sceneZ);
         }
 
-        console.warn('Warning unsupported wall type!');
+        console.warn('Warning unsupported wall type');
         return true;
     }
 
