@@ -75,7 +75,7 @@ export default class IfType {
     invBackground: (Pix32 | null)[] | null = null;
     iop: (string | null)[] | null = null;
     fill: boolean = false;
-    center: boolean = false;
+    centre: boolean = false;
     font: PixFont | null = null;
     shadow: boolean = false;
     text: string | null = null;
@@ -223,7 +223,7 @@ export default class IfType {
             }
 
             if (com.type === ComponentType.TYPE_TEXT || com.type === ComponentType.TYPE_UNUSED) {
-                com.center = data.g1() === 1;
+                com.centre = data.g1() === 1;
 
                 const font: number = data.g1();
                 if (fonts) {
@@ -298,7 +298,7 @@ export default class IfType {
                 com.linkObjType = new Int32Array(com.width * com.height);
                 com.linkObjNumber = new Int32Array(com.width * com.height);
 
-                com.center = data.g1() === 1;
+                com.centre = data.g1() === 1;
 
                 const font: number = data.g1();
                 if (fonts) {

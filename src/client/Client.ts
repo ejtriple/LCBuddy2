@@ -206,8 +206,8 @@ export class Client extends GameShell {
     private sceneLoadStartTime: number = 0;
     private withinTutorialIsland: boolean = false;
     private awaitingPlayerInfo: boolean = false;
-    private mapBuildCenterZoneX: number = 0;
-    private mapBuildCenterZoneZ: number = 0;
+    private mapBuildCentreZoneX: number = 0;
+    private mapBuildCentreZoneZ: number = 0;
     private mapBuildIndex: Int32Array | null = null;
     private mapBuildGroundFile: number[] = [];
     private mapBuildLocationFile: number[] = [];
@@ -1491,7 +1491,7 @@ export class Client extends GameShell {
             let x = ((w / 2) | 0) - 80;
             y = ((h / 2) | 0) + 20;
             this.imageTitlebutton?.plotSprite(x - 73, y - 20);
-            this.b12?.centreStringTag('New user', x, y + 5, Colour.WHITE, true);
+            this.b12?.centreStringTag('New User', x, y + 5, Colour.WHITE, true);
 
             x = ((w / 2) | 0) + 80;
             this.imageTitlebutton?.plotSprite(x - 73, y - 20);
@@ -1613,7 +1613,7 @@ export class Client extends GameShell {
             return;
         }
 
-        const background: Pix32 = await Pix32.fromJpeg(this.title, 'title');
+        const background: Pix32 = await Pix32.fromJpeg(this.title, 'title.dat');
 
         this.imageTitle0?.setPixels();
         background.quickPlotSprite(0, 0);
@@ -2204,7 +2204,7 @@ export class Client extends GameShell {
                 this.loginMes1 = 'Unable to connect.';
                 this.loginMes2 = 'Bad session id.';
             } else if (response === 11) {
-                this.loginMes2 = 'Login server rejected session.'; // intentionally loginMessage1
+                this.loginMes2 = 'Login server rejected session.'; // [sic] loginMes2
                 this.loginMes2 = 'Please try again.';
             } else if (response === 12) {
                 this.loginMes1 = 'You need a members account to login to this world.';
@@ -2241,7 +2241,7 @@ export class Client extends GameShell {
             } else if (response === 21) {
                 for (let remaining = await this.stream.read(); remaining >= 0; remaining--) {
                     this.loginMes1 = 'You have only just left another world';
-                    this.loginMes2 = 'Your profile will be transferred in: ' + remaining + ' seconds.';
+                    this.loginMes2 = 'Your profile will be transferred in: ' + remaining + ' seconds';
                     await this.titleScreenDraw();
 
                     await sleep(1000);
@@ -5047,8 +5047,8 @@ export class Client extends GameShell {
                     this.b12?.centreString(message, this.projectX, this.projectY + 1, Colour.BLACK);
                     this.b12?.centreString(message, this.projectX, this.projectY, colour);
                 } else if (this.chatEffect[i] === 1) {
-                    this.b12?.centerStringWave(message, this.projectX, this.projectY + 1, Colour.BLACK, this.sceneCycle);
-                    this.b12?.centerStringWave(message, this.projectX, this.projectY, colour, this.sceneCycle);
+                    this.b12?.centreStringWave(message, this.projectX, this.projectY + 1, Colour.BLACK, this.sceneCycle);
+                    this.b12?.centreStringWave(message, this.projectX, this.projectY, colour, this.sceneCycle);
                 } else if (this.chatEffect[i] === 2) {
                     const w: number = this.b12?.stringWid(message) ?? 0;
                     const offsetX: number = ((150 - this.chatTimer[i]) * (w + 100)) / 150;
@@ -5156,6 +5156,7 @@ export class Client extends GameShell {
             this.headicons[1]?.plotSprite(472, 296);
         }
 
+        // custom: taken from later client
         if (this.showFps) {
             const x: number = 507;
             let y: number = 20;
@@ -5369,7 +5370,7 @@ export class Client extends GameShell {
             const status = this.checkScene();
             if (status != 0 && performance.now() - this.sceneLoadStartTime > 360000) {
                 // "game loop check ..."
-                console.log(`${this.loginUser} glcfb ${this.loginSeed},${status},${Client.lowMem},${this.db !== null},${this.onDemand?.remaining()},${this.minusedlevel},${this.mapBuildCenterZoneX},${this.mapBuildCenterZoneZ}`);
+                console.log(`${this.loginUser} glcfb ${this.loginSeed},${status},${Client.lowMem},${this.db !== null},${this.onDemand?.remaining()},${this.minusedlevel},${this.mapBuildCentreZoneX},${this.mapBuildCentreZoneZ}`);
                 this.sceneLoadStartTime = performance.now();
             }
         }
@@ -5466,7 +5467,7 @@ export class Client extends GameShell {
                     const data: Uint8Array | null = this.mapBuildGroundData[i];
 
                     if (data) {
-                        build.loadGround(data, (this.mapBuildCenterZoneX - 6) * 8, (this.mapBuildCenterZoneZ - 6) * 8, x, z);
+                        build.loadGround(data, (this.mapBuildCentreZoneX - 6) * 8, (this.mapBuildCentreZoneZ - 6) * 8, x, z);
                     }
                 }
 
@@ -5475,7 +5476,7 @@ export class Client extends GameShell {
                     const z: number = (this.mapBuildIndex[i] & 0xff) * 64 - this.mapBuildBaseZ;
                     const data: Uint8Array | null = this.mapBuildGroundData[i];
 
-                    if (!data && this.mapBuildCenterZoneZ < 800) {
+                    if (!data && this.mapBuildCentreZoneZ < 800) {
                         build.fadeAdjacent(z, x, 64, 64);
                     }
                 }
@@ -5530,10 +5531,10 @@ export class Client extends GameShell {
         Pix3D.initPool(20);
         this.onDemand?.clearPrefetches();
 
-        let left = (((this.mapBuildCenterZoneX - 6) / 8) | 0) - 1;
-        let right = (((this.mapBuildCenterZoneX + 6) / 8) | 0) + 1;
-        let bottom = (((this.mapBuildCenterZoneZ - 6) / 8) | 0) - 1;
-        let top = (((this.mapBuildCenterZoneZ + 6) / 8) | 0) + 1;
+        let left = (((this.mapBuildCentreZoneX - 6) / 8) | 0) - 1;
+        let right = (((this.mapBuildCentreZoneX + 6) / 8) | 0) + 1;
+        let bottom = (((this.mapBuildCentreZoneZ - 6) / 8) | 0) - 1;
+        let top = (((this.mapBuildCentreZoneZ + 6) / 8) | 0) + 1;
 
         if (this.withinTutorialIsland) {
             left = 49;
@@ -7081,20 +7082,20 @@ export class Client extends GameShell {
                 const zoneX: number = this.in.g2();
                 const zoneZ: number = this.in.g2();
 
-                if (this.mapBuildCenterZoneX === zoneX && this.mapBuildCenterZoneZ === zoneZ && this.sceneState !== 0) {
+                if (this.mapBuildCentreZoneX === zoneX && this.mapBuildCentreZoneZ === zoneZ && this.sceneState === 2) {
                     this.ptype = -1;
                     return true;
                 }
 
-                this.mapBuildCenterZoneX = zoneX;
-                this.mapBuildCenterZoneZ = zoneZ;
-                this.mapBuildBaseX = (this.mapBuildCenterZoneX - 6) * 8;
-                this.mapBuildBaseZ = (this.mapBuildCenterZoneZ - 6) * 8;
+                this.mapBuildCentreZoneX = zoneX;
+                this.mapBuildCentreZoneZ = zoneZ;
+                this.mapBuildBaseX = (this.mapBuildCentreZoneX - 6) * 8;
+                this.mapBuildBaseZ = (this.mapBuildCentreZoneZ - 6) * 8;
 
                 this.withinTutorialIsland = false;
-                if ((this.mapBuildCenterZoneX / 8 == 48 || this.mapBuildCenterZoneX / 8 == 49) && this.mapBuildCenterZoneZ / 8 == 48) {
+                if ((this.mapBuildCentreZoneX / 8 == 48 || this.mapBuildCentreZoneX / 8 == 49) && this.mapBuildCentreZoneZ / 8 == 48) {
                     this.withinTutorialIsland = true;
-                } else if (this.mapBuildCenterZoneX / 8 == 48 && this.mapBuildCenterZoneZ / 8 == 148) {
+                } else if (this.mapBuildCentreZoneX / 8 == 48 && this.mapBuildCentreZoneZ / 8 == 148) {
                     this.withinTutorialIsland = true;
                 }
 
@@ -7107,8 +7108,8 @@ export class Client extends GameShell {
                 this.areaViewport?.draw(4, 4);
 
                 let regions = 0;
-                for (let x = ((this.mapBuildCenterZoneX - 6) / 8) | 0; x <= (((this.mapBuildCenterZoneX + 6) / 8) | 0); x++) {
-                    for (let z = ((this.mapBuildCenterZoneZ - 6) / 8) | 0; z <= (((this.mapBuildCenterZoneZ + 6) / 8) | 0); z++) {
+                for (let x = ((this.mapBuildCentreZoneX - 6) / 8) | 0; x <= (((this.mapBuildCentreZoneX + 6) / 8) | 0); x++) {
+                    for (let z = ((this.mapBuildCentreZoneZ - 6) / 8) | 0; z <= (((this.mapBuildCentreZoneZ + 6) / 8) | 0); z++) {
                         regions++;
                     }
                 }
@@ -7120,8 +7121,8 @@ export class Client extends GameShell {
                 this.mapBuildLocationFile = new Array(regions);
 
                 let mapCount = 0;
-                for (let x = ((this.mapBuildCenterZoneX - 6) / 8) | 0; x <= (((this.mapBuildCenterZoneX + 6) / 8) | 0); x++) {
-                    for (let z = ((this.mapBuildCenterZoneZ - 6) / 8) | 0; z <= (((this.mapBuildCenterZoneZ + 6) / 8) | 0); z++) {
+                for (let x = ((this.mapBuildCentreZoneX - 6) / 8) | 0; x <= (((this.mapBuildCentreZoneX + 6) / 8) | 0); x++) {
+                    for (let z = ((this.mapBuildCentreZoneZ - 6) / 8) | 0; z <= (((this.mapBuildCentreZoneZ + 6) / 8) | 0); z++) {
                         this.mapBuildIndex[mapCount] = (x << 8) + z;
 
                         if (this.withinTutorialIsland && (z == 49 || z == 149 || z == 147 || x == 50 || (x == 49 && z == 47))) {
@@ -7888,10 +7889,10 @@ export class Client extends GameShell {
         this.entityRemovalCount = 0;
         this.entityUpdateCount = 0;
 
-        this.getPlayerPosLocal(buf);
-        this.getPlayerPosOldVis(buf);
+        this.getPlayerPosLocal(buf, size);
+        this.getPlayerPosOldVis(buf, size);
         this.getPlayerPosNewVis(buf, size);
-        this.getPlayerPosExtended(buf);
+        this.getPlayerPosExtended(buf, size);
 
         for (let i: number = 0; i < this.entityRemovalCount; i++) {
             const index: number = this.entityRemovalIds[i];
@@ -7906,19 +7907,19 @@ export class Client extends GameShell {
         }
 
         if (buf.pos !== size) {
-            console.error(`eek! Error packet size mismatch in getplayer pos:${buf.pos} psize:${size}`);
+            console.error(`Error packet size mismatch in getplayer pos:${buf.pos} psize:${size}`);
             throw new Error('eek');
         }
 
         for (let index: number = 0; index < this.playerCount; index++) {
             if (!this.players[this.playerIds[index]]) {
-                console.error(`eek! ${this.loginUser} null entry in pl list - pos:${index} size:${this.playerCount}`);
+                console.error(`${this.loginUser} null entry in pl list - pos:${index} size:${this.playerCount}`);
                 throw new Error('eek');
             }
         }
     }
 
-    private getPlayerPosLocal(buf: Packet): void {
+    private getPlayerPosLocal(buf: Packet, _size: number): void {
         buf.gBitStart();
 
         const info: number = buf.gBit(1);
@@ -7962,7 +7963,7 @@ export class Client extends GameShell {
         }
     }
 
-    private getPlayerPosOldVis(buf: Packet): void {
+    private getPlayerPosOldVis(buf: Packet, _size: number): void {
         const count: number = buf.gBit(8);
 
         if (count < this.playerCount) {
@@ -8079,7 +8080,7 @@ export class Client extends GameShell {
         buf.gBitEnd();
     }
 
-    private getPlayerPosExtended(buf: Packet): void {
+    private getPlayerPosExtended(buf: Packet, _size: number): void {
         for (let i: number = 0; i < this.entityUpdateCount; i++) {
             const index: number = this.entityUpdateIds[i];
             const player: ClientPlayer | null = this.players[index];
@@ -8262,9 +8263,9 @@ export class Client extends GameShell {
         this.entityRemovalCount = 0;
         this.entityUpdateCount = 0;
 
-        this.getNpcPosOldVis(buf);
+        this.getNpcPosOldVis(buf, size);
         this.getNpcPosNewVis(buf, size);
-        this.getNpcPosExtended(buf);
+        this.getNpcPosExtended(buf, size);
 
         for (let i: number = 0; i < this.entityRemovalCount; i++) {
             const index: number = this.entityRemovalIds[i];
@@ -8292,7 +8293,7 @@ export class Client extends GameShell {
         }
     }
 
-    private getNpcPosOldVis(buf: Packet): void {
+    private getNpcPosOldVis(buf: Packet, size: number): void {
         buf.gBitStart();
 
         const count: number = buf.gBit(8);
@@ -8415,7 +8416,7 @@ export class Client extends GameShell {
         buf.gBitEnd();
     }
 
-    private getNpcPosExtended(buf: Packet): void {
+    private getNpcPosExtended(buf: Packet, _size: number): void {
         for (let i: number = 0; i < this.entityUpdateCount; i++) {
             const id: number = this.entityUpdateIds[i];
             const npc: ClientNpc | null = this.npc[id];
@@ -10117,7 +10118,7 @@ export class Client extends GameShell {
     private addSocialOptions(component: IfType): boolean {
         let clientCode: number = component.clientCode;
 
-        if ((clientCode >= ClientCode.CC_FRIENDS_START && clientCode <= ClientCode.CC_FRIENDS_UPDATE_END) || (clientCode >= 701 && clientCode <= 900)) {
+        if ((clientCode >= ClientCode.CC_FRIENDS_START && clientCode <= ClientCode.CC_FRIENDS_UPDATE_END) || !(clientCode < 701 || clientCode > 900)) {
             if (clientCode >= 801) {
                 clientCode -= 701;
             } else if (clientCode >= 701) {
@@ -10448,7 +10449,7 @@ export class Client extends GameShell {
                         text = '';
                     }
 
-                    if (child.center) {
+                    if (child.centre) {
                         font.centreStringTag(split, childX + ((child.width / 2) | 0), lineY, colour, child.shadow);
                     } else {
                         font.drawStringTag(split, childX, lineY, colour, child.shadow);
@@ -10521,7 +10522,7 @@ export class Client extends GameShell {
                             const textX: number = childX + col * (child.marginX + 115);
                             const textY: number = childY + row * (child.marginY + 12);
 
-                            if (child.center) {
+                            if (child.centre) {
                                 font.centreStringTag(text, textX + ((child.width / 2) | 0), textY, child.colour, child.shadow);
                             } else {
                                 font.drawStringTag(text, textX, textY, child.colour, child.shadow);
@@ -10664,13 +10665,13 @@ export class Client extends GameShell {
         return true;
     }
 
-    private getIfVar(component: IfType, scriptId: number): number {
-        if (!component.scripts || scriptId >= component.scripts.length) {
+    private getIfVar(com: IfType, scriptId: number): number {
+        if (!com.scripts || scriptId >= com.scripts.length) {
             return -2;
         }
 
         try {
-            const script: Uint16Array | null = component.scripts[scriptId];
+            const script: Uint16Array | null = com.scripts[scriptId];
             if (!script) {
                 return -1;
             }
@@ -10702,7 +10703,7 @@ export class Client extends GameShell {
                     const com: IfType = IfType.list[script[pc++]];
                     const obj: number = script[pc++] + 1;
 
-                    if (com.linkObjType && com.linkObjNumber) {
+                    if (com.linkObjType && com.linkObjNumber && obj >= 0 && obj < ObjType.numDefinitions && (!ObjType.list(obj).members || Client.memServer)) {
                         for (let i: number = 0; i < com.linkObjType.length; i++) {
                             if (com.linkObjType[i] === obj) {
                                 register += com.linkObjNumber[i];
@@ -10732,7 +10733,7 @@ export class Client extends GameShell {
                     const com: IfType = IfType.list[script[pc++]];
                     const obj: number = script[pc++] + 1;
 
-                    if (com.linkObjType) {
+                    if (com.linkObjType && obj >= 0 && obj < ObjType.numDefinitions && (!ObjType.list(obj).members || Client.memServer)) {
                         for (let i: number = 0; i < com.linkObjType.length; i++) {
                             if (com.linkObjType[i] === obj) {
                                 register = 999999999;
@@ -11465,7 +11466,7 @@ export class Client extends GameShell {
                     if (y > 0 && y < 110) {
                         let x = 4;
 
-                        font?.drawString('From ', x, y, Colour.BLACK);
+                        font?.drawString('From', x, y, Colour.BLACK);
                         x += font?.stringWid('From ') ?? 0;
 
                         if (modlevel == 1) {

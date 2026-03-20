@@ -24,7 +24,7 @@ export default class Pix32 extends Pix2D {
     }
 
     static async fromJpeg(archive: JagFile, name: string): Promise<Pix32> {
-        const dat: Uint8Array | null = archive.read(name + '.dat');
+        const dat: Uint8Array | null = archive.read(name);
         if (!dat) {
             throw new Error();
         }

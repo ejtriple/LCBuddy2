@@ -152,7 +152,7 @@ export default class PixFont extends Linkable2 {
         }
     }
 
-    centerStringWave(str: string | null, x: number, y: number, rgb: number, phase: number): void {
+    centreStringWave(str: string | null, x: number, y: number, rgb: number, phase: number): void {
         if (str === null) {
             return;
         }
