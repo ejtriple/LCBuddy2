@@ -167,7 +167,6 @@ export class Client extends GameShell {
 
     private lastAddress: number = 0;
     private dnsReq: string | null = null;
-    private dnsReqLock: boolean = false;
     private daysSinceLastLogin: number = 0;
     private daysSinceRecoveriesChanged: number = 0;
     private unreadMessages: number = 0;
@@ -2076,7 +2075,6 @@ export class Client extends GameShell {
                 this.staffmodlevel = await this.stream.read();
                 this.mouseTracked = (await this.stream.read()) === 1;
 
-                this.dnsReqLock = false;
                 this.prevMouseClickTime = 0;
                 this.mouseTrackedDelta = 0;
                 this.mouseTracking.length = 0;
@@ -7008,6 +7006,16 @@ export class Client extends GameShell {
                 this.warnMembersInNonMembers = this.in.g1();
 
                 if (this.lastAddress !== 0 && this.mainModalId === -1) {
+                    // custom: we don't have access to the user's DNS resolver in a browser, but we can use DNS over HTTPS (DoH)
+                    this.dnsReq = null;
+                    let ipStr = JString.formatIPv4(this.lastAddress);
+                    if (!ipStr.startsWith('127.')) {
+                        // we're using localhost as a privacy flag for now
+                        reverseDnsLookup(ipStr).then(results => {
+                            this.dnsReq = results[0];
+                        });
+                    }
+
                     this.closeModal();
 
                     let contentType: number = 650;
@@ -11152,18 +11160,9 @@ export class Client extends GameShell {
 
                 com.text = `You last logged in ${text}`;
 
-                // custom: we don't have access to the user's DNS resolver in a browser, but we can use DNS over HTTPS (DoH)
+                // custom: we're using localhost as a privacy flag for now
                 let ipStr = JString.formatIPv4(this.lastAddress);
                 if (!ipStr.startsWith('127.')) {
-                    // we're using localhost as a privacy flag for now
-                    if (this.dnsReq === null && !this.dnsReqLock) {
-                        this.dnsReqLock = true;
-
-                        reverseDnsLookup(ipStr).then(results => {
-                            this.dnsReq = results[0];
-                        });
-                    }
-
                     com.text += ` from: ${this.dnsReq ?? ipStr}`;
                 }
             }
