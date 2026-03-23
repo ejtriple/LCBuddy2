@@ -107,7 +107,11 @@ async function applyTerser(script: BunOutput): Promise<boolean> {
                     'midi_render',
                     'setValue',
                     'getValue',
-                    'calledRun'
+                    'calledRun',
+
+                    // dns-json response fields
+                    'Status',
+                    'Answer'
                 ]
             }
         }
