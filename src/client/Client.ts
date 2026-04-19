@@ -150,7 +150,7 @@ export class Client extends GameShell {
     private mouseTracking: MouseTracking = new MouseTracking(this);
     private mouseTrackedX: number = 0;
     private mouseTrackedY: number = 0;
-    private mouseTrackedDelta: number = 0;
+    private mouseTrackDelta: number = 0;
     private focusIn: boolean = false;
 
     private showFps: boolean = false;
@@ -337,10 +337,10 @@ export class Client extends GameShell {
     private redstone3v: Pix8 | null = null;
     private redstone1hv: Pix8 | null = null;
     private redstone2hv: Pix8 | null = null;
-    private redrawSidebar: boolean = false;
-    private redrawChatback: boolean = false;
-    private redrawSideicons: boolean = false;
-    private redrawPrivacySettings: boolean = false;
+    private redrawSide: boolean = false;
+    private redrawChat: boolean = false;
+    private redrawIcons: boolean = false;
+    private redrawChatMode: boolean = false;
 
     private mapback: Pix8 | null = null;
     private compassMaskLineOffsets: Int32Array = new Int32Array(33);
@@ -459,7 +459,7 @@ export class Client extends GameShell {
     private targetMask: number = 0;
     private targetOp: string | null = null;
 
-    private chatComId: number = -1;
+    private chatModalId: number = -1;
     private mainModalId: number = -1;
     private sideModalId: number = -1;
     private mainOverlayId: number = -1;
@@ -467,8 +467,8 @@ export class Client extends GameShell {
     private overChatComId: number = 0;
     private overMainComId: number = 0;
     private overSideComId: number = 0;
-    private sideTab: number = 3;
-    private sideOverlayId: number[] = [
+    private activeIcon: number = 3;
+    private sideIcon: number[] = [
         -1, -1, -1,
         -1, -1, -1,
         -1, -1, -1,
@@ -477,7 +477,7 @@ export class Client extends GameShell {
     ];
     private tutComId: number = -1;
     private tutComMessage: string | null = null;
-    private tutFlashingTab: number = -1;
+    private tutFlashIcon: number = -1;
 
     private chatEffects: number = 0;
     private splitPrivateChat: number = 0;
@@ -1317,10 +1317,10 @@ export class Client extends GameShell {
                 Model.unpack(req.file, req.data);
 
                 if ((this.onDemand.getModelUse(req.file) & 0x62) != 0) {
-                    this.redrawSidebar = true;
+                    this.redrawSide = true;
 
-                    if (this.chatComId !== -1) {
-                        this.redrawChatback = true;
+                    if (this.chatModalId !== -1) {
+                        this.redrawChat = true;
                     }
                 }
             } else if (req.archive === 1) {
@@ -2076,7 +2076,7 @@ export class Client extends GameShell {
                 this.mouseTracked = (await this.stream.read()) === 1;
 
                 this.prevMouseClickTime = 0;
-                this.mouseTrackedDelta = 0;
+                this.mouseTrackDelta = 0;
                 this.mouseTracking.length = 0;
                 this.focus = true;
                 this.focusIn = true;
@@ -2146,18 +2146,18 @@ export class Client extends GameShell {
                 this.friendServerStatus = 0;
                 this.friendCount = 0;
                 this.tutComId = -1;
-                this.chatComId = -1;
+                this.chatModalId = -1;
                 this.mainModalId = -1;
                 this.sideModalId = -1;
                 this.mainOverlayId = -1;
                 this.resumedPauseButton = false;
-                this.sideTab = 3;
+                this.activeIcon = 3;
                 this.dialogInputOpen = false;
                 this.isMenuOpen = false;
                 this.socialInputOpen = false;
                 this.tutComMessage = null;
                 this.inMultizone = 0;
-                this.tutFlashingTab = -1;
+                this.tutFlashIcon = -1;
 
                 this.idkDesignGender = true;
                 this.validateIdkDesign();
@@ -2394,20 +2394,20 @@ export class Client extends GameShell {
                     let dy = y - this.mouseTrackedY;
                     this.mouseTrackedY = y;
 
-                    if (this.mouseTrackedDelta < 8 && dx >= -32 && dx <= 31 && dy >= -32 && dy <= 31) {
+                    if (this.mouseTrackDelta < 8 && dx >= -32 && dx <= 31 && dy >= -32 && dy <= 31) {
                         dx += 32;
                         dy += 32;
-                        this.out.p2((this.mouseTrackedDelta << 12) + (dx << 6) + dy);
-                        this.mouseTrackedDelta = 0;
-                    } else if (this.mouseTrackedDelta < 8) {
-                        this.out.p3(0x800000 + (this.mouseTrackedDelta << 19) + pos);
-                        this.mouseTrackedDelta = 0;
+                        this.out.p2((this.mouseTrackDelta << 12) + (dx << 6) + dy);
+                        this.mouseTrackDelta = 0;
+                    } else if (this.mouseTrackDelta < 8) {
+                        this.out.p3(0x800000 + (this.mouseTrackDelta << 19) + pos);
+                        this.mouseTrackDelta = 0;
                     } else {
-                        this.out.p4(0xc0000000 + (this.mouseTrackedDelta << 19) + pos);
-                        this.mouseTrackedDelta = 0;
+                        this.out.p4(0xc0000000 + (this.mouseTrackDelta << 19) + pos);
+                        this.mouseTrackDelta = 0;
                     }
-                } else if (this.mouseTrackedDelta < 2047) {
-                    this.mouseTrackedDelta++;
+                } else if (this.mouseTrackDelta < 2047) {
+                    this.mouseTrackDelta++;
                 }
             }
 
@@ -2512,10 +2512,10 @@ export class Client extends GameShell {
 
             if (this.selectedCycle >= 15) {
                 if (this.selectedArea === 2) {
-                    this.redrawSidebar = true;
+                    this.redrawSide = true;
                 }
                 if (this.selectedArea === 3) {
-                    this.redrawChatback = true;
+                    this.redrawChat = true;
                 }
 
                 this.selectedArea = 0;
@@ -2531,10 +2531,10 @@ export class Client extends GameShell {
 
             if (this.mouseButton === 0) {
                 if (this.objDragArea === 2) {
-                    this.redrawSidebar = true;
+                    this.redrawSide = true;
                 }
                 if (this.objDragArea === 3) {
-                    this.redrawChatback = true;
+                    this.redrawChat = true;
                 }
 
                 this.objDragArea = 0;
@@ -2621,7 +2621,7 @@ export class Client extends GameShell {
 
         if (this.mouseClickButton === 1 && this.tutComMessage) {
             this.tutComMessage = null;
-            this.redrawChatback = true;
+            this.redrawChat = true;
             this.mouseClickButton = 0;
         }
 
@@ -2836,13 +2836,13 @@ export class Client extends GameShell {
         if (this.mouseX > 553 && this.mouseY > 205 && this.mouseX < 743 && this.mouseY < 466) {
             if (this.sideModalId !== -1) {
                 this.addComponentOptions(IfType.list[this.sideModalId], this.mouseX, this.mouseY, 553, 205, 0);
-            } else if (this.sideOverlayId[this.sideTab] !== -1) {
-                this.addComponentOptions(IfType.list[this.sideOverlayId[this.sideTab]], this.mouseX, this.mouseY, 553, 205, 0);
+            } else if (this.sideIcon[this.activeIcon] !== -1) {
+                this.addComponentOptions(IfType.list[this.sideIcon[this.activeIcon]], this.mouseX, this.mouseY, 553, 205, 0);
             }
         }
 
         if (this.lastOverComId !== this.overSideComId) {
-            this.redrawSidebar = true;
+            this.redrawSide = true;
             this.overSideComId = this.lastOverComId;
         }
 
@@ -2850,15 +2850,15 @@ export class Client extends GameShell {
 
         // the chatbox area
         if (this.mouseX > 17 && this.mouseY > 357 && this.mouseX < 496 && this.mouseY < 453) {
-            if (this.chatComId !== -1) {
-                this.addComponentOptions(IfType.list[this.chatComId], this.mouseX, this.mouseY, 17, 357, 0);
+            if (this.chatModalId !== -1) {
+                this.addComponentOptions(IfType.list[this.chatModalId], this.mouseX, this.mouseY, 17, 357, 0);
             } else if (this.mouseY < 434 && this.mouseX < 426) {
                 this.addChatOptions(this.mouseX - 17, this.mouseY - 357);
             }
         }
 
-        if (this.chatComId !== -1 && this.lastOverComId !== this.overChatComId) {
-            this.redrawChatback = true;
+        if (this.chatModalId !== -1 && this.lastOverComId !== this.overChatComId) {
+            this.redrawChat = true;
             this.overChatComId = this.lastOverComId;
         }
 
@@ -3086,62 +3086,62 @@ export class Client extends GameShell {
             return;
         }
 
-        if (this.mouseClickX >= 539 && this.mouseClickX <= 573 && this.mouseClickY >= 169 && this.mouseClickY < 205 && this.sideOverlayId[0] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 0;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 569 && this.mouseClickX <= 599 && this.mouseClickY >= 168 && this.mouseClickY < 205 && this.sideOverlayId[1] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 1;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 597 && this.mouseClickX <= 627 && this.mouseClickY >= 168 && this.mouseClickY < 205 && this.sideOverlayId[2] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 2;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 625 && this.mouseClickX <= 669 && this.mouseClickY >= 168 && this.mouseClickY < 203 && this.sideOverlayId[3] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 3;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 666 && this.mouseClickX <= 696 && this.mouseClickY >= 168 && this.mouseClickY < 205 && this.sideOverlayId[4] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 4;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 694 && this.mouseClickX <= 724 && this.mouseClickY >= 168 && this.mouseClickY < 205 && this.sideOverlayId[5] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 5;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 722 && this.mouseClickX <= 756 && this.mouseClickY >= 169 && this.mouseClickY < 205 && this.sideOverlayId[6] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 6;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 540 && this.mouseClickX <= 574 && this.mouseClickY >= 466 && this.mouseClickY < 502 && this.sideOverlayId[7] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 7;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 572 && this.mouseClickX <= 602 && this.mouseClickY >= 466 && this.mouseClickY < 503 && this.sideOverlayId[8] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 8;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 599 && this.mouseClickX <= 629 && this.mouseClickY >= 466 && this.mouseClickY < 503 && this.sideOverlayId[9] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 9;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 627 && this.mouseClickX <= 671 && this.mouseClickY >= 467 && this.mouseClickY < 502 && this.sideOverlayId[10] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 10;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 669 && this.mouseClickX <= 699 && this.mouseClickY >= 466 && this.mouseClickY < 503 && this.sideOverlayId[11] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 11;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 696 && this.mouseClickX <= 726 && this.mouseClickY >= 466 && this.mouseClickY < 503 && this.sideOverlayId[12] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 12;
-            this.redrawSideicons = true;
-        } else if (this.mouseClickX >= 724 && this.mouseClickX <= 758 && this.mouseClickY >= 466 && this.mouseClickY < 502 && this.sideOverlayId[13] != -1) {
-            this.redrawSidebar = true;
-            this.sideTab = 13;
-            this.redrawSideicons = true;
+        if (this.mouseClickX >= 539 && this.mouseClickX <= 573 && this.mouseClickY >= 169 && this.mouseClickY < 205 && this.sideIcon[0] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 0;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 569 && this.mouseClickX <= 599 && this.mouseClickY >= 168 && this.mouseClickY < 205 && this.sideIcon[1] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 1;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 597 && this.mouseClickX <= 627 && this.mouseClickY >= 168 && this.mouseClickY < 205 && this.sideIcon[2] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 2;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 625 && this.mouseClickX <= 669 && this.mouseClickY >= 168 && this.mouseClickY < 203 && this.sideIcon[3] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 3;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 666 && this.mouseClickX <= 696 && this.mouseClickY >= 168 && this.mouseClickY < 205 && this.sideIcon[4] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 4;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 694 && this.mouseClickX <= 724 && this.mouseClickY >= 168 && this.mouseClickY < 205 && this.sideIcon[5] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 5;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 722 && this.mouseClickX <= 756 && this.mouseClickY >= 169 && this.mouseClickY < 205 && this.sideIcon[6] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 6;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 540 && this.mouseClickX <= 574 && this.mouseClickY >= 466 && this.mouseClickY < 502 && this.sideIcon[7] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 7;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 572 && this.mouseClickX <= 602 && this.mouseClickY >= 466 && this.mouseClickY < 503 && this.sideIcon[8] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 8;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 599 && this.mouseClickX <= 629 && this.mouseClickY >= 466 && this.mouseClickY < 503 && this.sideIcon[9] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 9;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 627 && this.mouseClickX <= 671 && this.mouseClickY >= 467 && this.mouseClickY < 502 && this.sideIcon[10] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 10;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 669 && this.mouseClickX <= 699 && this.mouseClickY >= 466 && this.mouseClickY < 503 && this.sideIcon[11] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 11;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 696 && this.mouseClickX <= 726 && this.mouseClickY >= 466 && this.mouseClickY < 503 && this.sideIcon[12] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 12;
+            this.redrawIcons = true;
+        } else if (this.mouseClickX >= 724 && this.mouseClickX <= 758 && this.mouseClickY >= 466 && this.mouseClickY < 502 && this.sideIcon[13] != -1) {
+            this.redrawSide = true;
+            this.activeIcon = 13;
+            this.redrawIcons = true;
         }
     }
 
@@ -3153,8 +3153,8 @@ export class Client extends GameShell {
 
         if (this.mouseClickX >= 6 && this.mouseClickX <= 106 && this.mouseClickY >= 467 && this.mouseClickY <= 499) {
             this.chatPublicMode = (this.chatPublicMode + 1) % 4;
-            this.redrawPrivacySettings = true;
-            this.redrawChatback = true;
+            this.redrawChatMode = true;
+            this.redrawChat = true;
 
             this.out.p1Enc(ClientProt.CHAT_SETMODE);
             this.out.p1(this.chatPublicMode);
@@ -3162,8 +3162,8 @@ export class Client extends GameShell {
             this.out.p1(this.chatTradeMode);
         } else if (this.mouseClickX >= 135 && this.mouseClickX <= 235 && this.mouseClickY >= 467 && this.mouseClickY <= 499) {
             this.chatPrivateMode = (this.chatPrivateMode + 1) % 3;
-            this.redrawPrivacySettings = true;
-            this.redrawChatback = true;
+            this.redrawChatMode = true;
+            this.redrawChat = true;
 
             this.out.p1Enc(ClientProt.CHAT_SETMODE);
             this.out.p1(this.chatPublicMode);
@@ -3171,8 +3171,8 @@ export class Client extends GameShell {
             this.out.p1(this.chatTradeMode);
         } else if (this.mouseClickX >= 273 && this.mouseClickX <= 373 && this.mouseClickY >= 467 && this.mouseClickY <= 499) {
             this.chatTradeMode = (this.chatTradeMode + 1) % 3;
-            this.redrawPrivacySettings = true;
-            this.redrawChatback = true;
+            this.redrawChatMode = true;
+            this.redrawChat = true;
 
             this.out.p1Enc(ClientProt.CHAT_SETMODE);
             this.out.p1(this.chatPublicMode);
@@ -3259,17 +3259,17 @@ export class Client extends GameShell {
                     if (this.socialInputOpen) {
                         if (key >= 32 && key <= 122 && this.socialInput.length < 80) {
                             this.socialInput = this.socialInput + String.fromCharCode(key);
-                            this.redrawChatback = true;
+                            this.redrawChat = true;
                         }
 
                         if (key === 8 && this.socialInput.length > 0) {
                             this.socialInput = this.socialInput.substring(0, this.socialInput.length - 1);
-                            this.redrawChatback = true;
+                            this.redrawChat = true;
                         }
 
                         if (key === 13 || key === 10) {
                             this.socialInputOpen = false;
-                            this.redrawChatback = true;
+                            this.redrawChat = true;
 
                             let userhash: bigint;
                             if (this.socialInputType === 1) {
@@ -3297,7 +3297,7 @@ export class Client extends GameShell {
 
                                 if (this.chatPrivateMode === 2) {
                                     this.chatPrivateMode = 1;
-                                    this.redrawPrivacySettings = true;
+                                    this.redrawChatMode = true;
 
                                     this.out.p1Enc(ClientProt.CHAT_SETMODE);
                                     this.out.p1(this.chatPublicMode);
@@ -3319,12 +3319,12 @@ export class Client extends GameShell {
                     } else if (this.dialogInputOpen) {
                         if (key >= 48 && key <= 57 && this.dialogInput.length < 10) {
                             this.dialogInput = this.dialogInput + String.fromCharCode(key);
-                            this.redrawChatback = true;
+                            this.redrawChat = true;
                         }
 
                         if (key === 8 && this.dialogInput.length > 0) {
                             this.dialogInput = this.dialogInput.substring(0, this.dialogInput.length - 1);
-                            this.redrawChatback = true;
+                            this.redrawChat = true;
                         }
 
                         if (key === 13 || key === 10) {
@@ -3341,18 +3341,18 @@ export class Client extends GameShell {
                             }
 
                             this.dialogInputOpen = false;
-                            this.redrawChatback = true;
+                            this.redrawChat = true;
                         }
-                    } else if (this.chatComId === -1) {
+                    } else if (this.chatModalId === -1) {
                         // custom: when typing a command, you can use the debugproc character (tilde)
                         if (key >= 32 && (key <= 122 || (this.chatInput.startsWith('::') && key <= 126)) && this.chatInput.length < 80) {
                             this.chatInput = this.chatInput + String.fromCharCode(key);
-                            this.redrawChatback = true;
+                            this.redrawChat = true;
                         }
 
                         if (key === 8 && this.chatInput.length > 0) {
                             this.chatInput = this.chatInput.substring(0, this.chatInput.length - 1);
-                            this.redrawChatback = true;
+                            this.redrawChat = true;
                         }
 
                         if ((key === 13 || key === 10) && this.chatInput.length > 0) {
@@ -3468,7 +3468,7 @@ export class Client extends GameShell {
 
                                 if (this.chatPublicMode === 2) {
                                     this.chatPublicMode = 3;
-                                    this.redrawPrivacySettings = true;
+                                    this.redrawChatMode = true;
 
                                     this.out.p1Enc(ClientProt.CHAT_SETMODE);
                                     this.out.p1(this.chatPublicMode);
@@ -3478,7 +3478,7 @@ export class Client extends GameShell {
                             }
 
                             this.chatInput = '';
-                            this.redrawChatback = true;
+                            this.redrawChat = true;
                         }
                     }
                 }
@@ -4192,10 +4192,10 @@ export class Client extends GameShell {
             this.areaBackvmid3?.draw(496, 357);
             this.areaBackhmid2?.draw(0, 338);
 
-            this.redrawSidebar = true;
-            this.redrawChatback = true;
-            this.redrawSideicons = true;
-            this.redrawPrivacySettings = true;
+            this.redrawSide = true;
+            this.redrawChat = true;
+            this.redrawIcons = true;
+            this.redrawChatMode = true;
 
             if (this.sceneState !== 2) {
                 this.areaViewport?.draw(4, 4);
@@ -4208,30 +4208,30 @@ export class Client extends GameShell {
         }
 
         if (this.isMenuOpen && this.menuArea === 1) {
-            this.redrawSidebar = true;
+            this.redrawSide = true;
         }
 
         if (this.sideModalId !== -1) {
             const redraw = this.animateInterface(this.sideModalId, this.worldUpdateNum);
             if (redraw) {
-                this.redrawSidebar = true;
+                this.redrawSide = true;
             }
         }
 
         if (this.selectedArea === 2) {
-            this.redrawSidebar = true;
+            this.redrawSide = true;
         }
 
         if (this.objDragArea === 2) {
-            this.redrawSidebar = true;
+            this.redrawSide = true;
         }
 
-        if (this.redrawSidebar) {
-            this.drawSidebar();
-            this.redrawSidebar = false;
+        if (this.redrawSide) {
+            this.drawSide();
+            this.redrawSide = false;
         }
 
-        if (this.chatComId === -1) {
+        if (this.chatModalId === -1) {
             this.chatInterface.scrollPos = this.chatScrollHeight - this.chatScrollPos - 77;
 
             if (this.mouseX > 448 && this.mouseX < 560 && this.mouseY > 332) {
@@ -4249,36 +4249,36 @@ export class Client extends GameShell {
 
             if (this.chatScrollPos !== offset) {
                 this.chatScrollPos = offset;
-                this.redrawChatback = true;
+                this.redrawChat = true;
             }
         }
 
-        if (this.chatComId !== -1) {
-            const redraw = this.animateInterface(this.chatComId, this.worldUpdateNum);
+        if (this.chatModalId !== -1) {
+            const redraw = this.animateInterface(this.chatModalId, this.worldUpdateNum);
             if (redraw) {
-                this.redrawChatback = true;
+                this.redrawChat = true;
             }
         }
 
         if (this.selectedArea === 3) {
-            this.redrawChatback = true;
+            this.redrawChat = true;
         }
 
         if (this.objDragArea === 3) {
-            this.redrawChatback = true;
+            this.redrawChat = true;
         }
 
         if (this.tutComMessage) {
-            this.redrawChatback = true;
+            this.redrawChat = true;
         }
 
         if (this.isMenuOpen && this.menuArea === 2) {
-            this.redrawChatback = true;
+            this.redrawChat = true;
         }
 
-        if (this.redrawChatback) {
+        if (this.redrawChat) {
             this.drawChat();
-            this.redrawChatback = false;
+            this.redrawChat = false;
         }
 
         if (this.sceneState === 2) {
@@ -4286,65 +4286,65 @@ export class Client extends GameShell {
             this.areaMapback?.draw(550, 4);
         }
 
-        if (this.tutFlashingTab !== -1) {
-            this.redrawSideicons = true;
+        if (this.tutFlashIcon !== -1) {
+            this.redrawIcons = true;
         }
 
-        if (this.redrawSideicons) {
-            if (this.tutFlashingTab !== -1 && this.tutFlashingTab === this.sideTab) {
-                this.tutFlashingTab = -1;
+        if (this.redrawIcons) {
+            if (this.tutFlashIcon !== -1 && this.tutFlashIcon === this.activeIcon) {
+                this.tutFlashIcon = -1;
                 this.out.p1Enc(ClientProt.TUT_CLICKSIDE);
-                this.out.p1(this.sideTab);
+                this.out.p1(this.activeIcon);
             }
 
-            this.redrawSideicons = false;
+            this.redrawIcons = false;
             this.areaBackhmid1?.setPixels();
             this.backhmid1?.plotSprite(0, 0);
 
             if (this.sideModalId === -1) {
-                if (this.sideOverlayId[this.sideTab] !== -1) {
-                    if (this.sideTab === 0) {
+                if (this.sideIcon[this.activeIcon] !== -1) {
+                    if (this.activeIcon === 0) {
                         this.redstone1?.plotSprite(22, 10);
-                    } else if (this.sideTab === 1) {
+                    } else if (this.activeIcon === 1) {
                         this.redstone2?.plotSprite(54, 8);
-                    } else if (this.sideTab === 2) {
+                    } else if (this.activeIcon === 2) {
                         this.redstone2?.plotSprite(82, 8);
-                    } else if (this.sideTab === 3) {
+                    } else if (this.activeIcon === 3) {
                         this.redstone3?.plotSprite(110, 8);
-                    } else if (this.sideTab === 4) {
+                    } else if (this.activeIcon === 4) {
                         this.redstone2h?.plotSprite(153, 8);
-                    } else if (this.sideTab === 5) {
+                    } else if (this.activeIcon === 5) {
                         this.redstone2h?.plotSprite(181, 8);
-                    } else if (this.sideTab === 6) {
+                    } else if (this.activeIcon === 6) {
                         this.redstone1h?.plotSprite(209, 9);
                     }
                 }
 
-                if (this.sideOverlayId[0] !== -1 && (this.tutFlashingTab !== 0 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[0] !== -1 && (this.tutFlashIcon !== 0 || this.loopCycle % 20 < 10)) {
                     this.sideicons[0]?.plotSprite(29, 13);
                 }
 
-                if (this.sideOverlayId[1] !== -1 && (this.tutFlashingTab !== 1 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[1] !== -1 && (this.tutFlashIcon !== 1 || this.loopCycle % 20 < 10)) {
                     this.sideicons[1]?.plotSprite(53, 11);
                 }
 
-                if (this.sideOverlayId[2] !== -1 && (this.tutFlashingTab !== 2 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[2] !== -1 && (this.tutFlashIcon !== 2 || this.loopCycle % 20 < 10)) {
                     this.sideicons[2]?.plotSprite(82, 11);
                 }
 
-                if (this.sideOverlayId[3] !== -1 && (this.tutFlashingTab !== 3 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[3] !== -1 && (this.tutFlashIcon !== 3 || this.loopCycle % 20 < 10)) {
                     this.sideicons[3]?.plotSprite(115, 12);
                 }
 
-                if (this.sideOverlayId[4] !== -1 && (this.tutFlashingTab !== 4 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[4] !== -1 && (this.tutFlashIcon !== 4 || this.loopCycle % 20 < 10)) {
                     this.sideicons[4]?.plotSprite(153, 13);
                 }
 
-                if (this.sideOverlayId[5] !== -1 && (this.tutFlashingTab !== 5 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[5] !== -1 && (this.tutFlashIcon !== 5 || this.loopCycle % 20 < 10)) {
                     this.sideicons[5]?.plotSprite(180, 11);
                 }
 
-                if (this.sideOverlayId[6] !== -1 && (this.tutFlashingTab !== 6 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[6] !== -1 && (this.tutFlashIcon !== 6 || this.loopCycle % 20 < 10)) {
                     this.sideicons[6]?.plotSprite(208, 13);
                 }
             }
@@ -4355,45 +4355,45 @@ export class Client extends GameShell {
             this.backbase2?.plotSprite(0, 0);
 
             if (this.sideModalId === -1) {
-                if (this.sideOverlayId[this.sideTab] !== -1) {
-                    if (this.sideTab === 7) {
+                if (this.sideIcon[this.activeIcon] !== -1) {
+                    if (this.activeIcon === 7) {
                         this.redstone1v?.plotSprite(42, 0);
-                    } else if (this.sideTab === 8) {
+                    } else if (this.activeIcon === 8) {
                         this.redstone2v?.plotSprite(74, 0);
-                    } else if (this.sideTab === 9) {
+                    } else if (this.activeIcon === 9) {
                         this.redstone2v?.plotSprite(102, 0);
-                    } else if (this.sideTab === 10) {
+                    } else if (this.activeIcon === 10) {
                         this.redstone3v?.plotSprite(130, 1);
-                    } else if (this.sideTab === 11) {
+                    } else if (this.activeIcon === 11) {
                         this.redstone2hv?.plotSprite(173, 0);
-                    } else if (this.sideTab === 12) {
+                    } else if (this.activeIcon === 12) {
                         this.redstone2hv?.plotSprite(201, 0);
-                    } else if (this.sideTab === 13) {
+                    } else if (this.activeIcon === 13) {
                         this.redstone1hv?.plotSprite(229, 0);
                     }
                 }
 
-                if (this.sideOverlayId[8] !== -1 && (this.tutFlashingTab !== 8 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[8] !== -1 && (this.tutFlashIcon !== 8 || this.loopCycle % 20 < 10)) {
                     this.sideicons[7]?.plotSprite(74, 2);
                 }
 
-                if (this.sideOverlayId[9] !== -1 && (this.tutFlashingTab !== 9 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[9] !== -1 && (this.tutFlashIcon !== 9 || this.loopCycle % 20 < 10)) {
                     this.sideicons[8]?.plotSprite(102, 3);
                 }
 
-                if (this.sideOverlayId[10] !== -1 && (this.tutFlashingTab !== 10 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[10] !== -1 && (this.tutFlashIcon !== 10 || this.loopCycle % 20 < 10)) {
                     this.sideicons[9]?.plotSprite(137, 4);
                 }
 
-                if (this.sideOverlayId[11] !== -1 && (this.tutFlashingTab !== 11 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[11] !== -1 && (this.tutFlashIcon !== 11 || this.loopCycle % 20 < 10)) {
                     this.sideicons[10]?.plotSprite(174, 2);
                 }
 
-                if (this.sideOverlayId[12] !== -1 && (this.tutFlashingTab !== 12 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[12] !== -1 && (this.tutFlashIcon !== 12 || this.loopCycle % 20 < 10)) {
                     this.sideicons[11]?.plotSprite(201, 2);
                 }
 
-                if (this.sideOverlayId[13] !== -1 && (this.tutFlashingTab !== 13 || this.loopCycle % 20 < 10)) {
+                if (this.sideIcon[13] !== -1 && (this.tutFlashIcon !== 13 || this.loopCycle % 20 < 10)) {
                     this.sideicons[12]?.plotSprite(226, 2);
                 }
             }
@@ -4403,8 +4403,8 @@ export class Client extends GameShell {
             this.areaViewport?.setPixels();
         }
 
-        if (this.redrawPrivacySettings) {
-            this.redrawPrivacySettings = false;
+        if (this.redrawChatMode) {
+            this.redrawChatMode = false;
 
             this.areaBackbase1?.setPixels();
             this.backbase1?.plotSprite(0, 0);
@@ -6214,12 +6214,12 @@ export class Client extends GameShell {
 
                 if (this.sideModalId !== -1) {
                     this.sideModalId = -1;
-                    this.redrawSidebar = true;
-                    this.redrawSideicons = true;
+                    this.redrawSide = true;
+                    this.redrawIcons = true;
                 }
 
-                this.chatComId = comId;
-                this.redrawChatback = true;
+                this.chatModalId = comId;
+                this.redrawChat = true;
                 this.mainModalId = -1;
                 this.resumedPauseButton = false;
 
@@ -6231,20 +6231,20 @@ export class Client extends GameShell {
                 const mainComId: number = this.in.g2();
                 const sideComId: number = this.in.g2();
 
-                if (this.chatComId !== -1) {
-                    this.chatComId = -1;
-                    this.redrawChatback = true;
+                if (this.chatModalId !== -1) {
+                    this.chatModalId = -1;
+                    this.redrawChat = true;
                 }
 
                 if (this.dialogInputOpen) {
                     this.dialogInputOpen = false;
-                    this.redrawChatback = true;
+                    this.redrawChat = true;
                 }
 
                 this.mainModalId = mainComId;
                 this.sideModalId = sideComId;
-                this.redrawSidebar = true;
-                this.redrawSideicons = true;
+                this.redrawSide = true;
+                this.redrawIcons = true;
                 this.resumedPauseButton = false;
 
                 this.ptype = -1;
@@ -6254,18 +6254,18 @@ export class Client extends GameShell {
             if (this.ptype === ServerProt.IF_CLOSE) {
                 if (this.sideModalId !== -1) {
                     this.sideModalId = -1;
-                    this.redrawSidebar = true;
-                    this.redrawSideicons = true;
+                    this.redrawSide = true;
+                    this.redrawIcons = true;
                 }
 
-                if (this.chatComId !== -1) {
-                    this.chatComId = -1;
-                    this.redrawChatback = true;
+                if (this.chatModalId !== -1) {
+                    this.chatModalId = -1;
+                    this.redrawChat = true;
                 }
 
                 if (this.dialogInputOpen) {
                     this.dialogInputOpen = false;
-                    this.redrawChatback = true;
+                    this.redrawChat = true;
                 }
 
                 this.mainModalId = -1;
@@ -6275,16 +6275,16 @@ export class Client extends GameShell {
                 return true;
             }
 
-            if (this.ptype === ServerProt.IF_SETTAB) {
+            if (this.ptype === ServerProt.IF_SETICON) {
                 let comId: number = this.in.g2();
-                const tab: number = this.in.g1();
+                const icon: number = this.in.g1();
                 if (comId === 65535) {
                     comId = -1;
                 }
-                this.sideOverlayId[tab] = comId;
+                this.sideIcon[icon] = comId;
 
-                this.redrawSidebar = true;
-                this.redrawSideicons = true;
+                this.redrawSide = true;
+                this.redrawIcons = true;
 
                 this.ptype = -1;
                 return true;
@@ -6296,18 +6296,18 @@ export class Client extends GameShell {
 
                 if (this.sideModalId !== -1) {
                     this.sideModalId = -1;
-                    this.redrawSidebar = true;
-                    this.redrawSideicons = true;
+                    this.redrawSide = true;
+                    this.redrawIcons = true;
                 }
 
-                if (this.chatComId !== -1) {
-                    this.chatComId = -1;
-                    this.redrawChatback = true;
+                if (this.chatModalId !== -1) {
+                    this.chatModalId = -1;
+                    this.redrawChat = true;
                 }
 
                 if (this.dialogInputOpen) {
                     this.dialogInputOpen = false;
-                    this.redrawChatback = true;
+                    this.redrawChat = true;
                 }
 
                 this.mainModalId = comId;
@@ -6321,19 +6321,19 @@ export class Client extends GameShell {
                 const comId: number = this.in.g2();
                 this.ifAnimReset(comId);
 
-                if (this.chatComId !== -1) {
-                    this.chatComId = -1;
-                    this.redrawChatback = true;
+                if (this.chatModalId !== -1) {
+                    this.chatModalId = -1;
+                    this.redrawChat = true;
                 }
 
                 if (this.dialogInputOpen) {
                     this.dialogInputOpen = false;
-                    this.redrawChatback = true;
+                    this.redrawChat = true;
                 }
 
                 this.sideModalId = comId;
-                this.redrawSidebar = true;
-                this.redrawSideicons = true;
+                this.redrawSide = true;
+                this.redrawIcons = true;
                 this.mainModalId = -1;
                 this.resumedPauseButton = false;
 
@@ -6341,11 +6341,11 @@ export class Client extends GameShell {
                 return true;
             }
 
-            if (this.ptype === ServerProt.IF_SETTAB_ACTIVE) {
-                this.sideTab = this.in.g1();
+            if (this.ptype === ServerProt.IF_SHOWICON) {
+                this.activeIcon = this.in.g1();
 
-                this.redrawSidebar = true;
-                this.redrawSideicons = true;
+                this.redrawSide = true;
+                this.redrawIcons = true;
 
                 this.ptype = -1;
                 return true;
@@ -6445,8 +6445,8 @@ export class Client extends GameShell {
 
                 IfType.list[comId].text = text;
 
-                if (IfType.list[comId].layerId === this.sideOverlayId[this.sideTab]) {
-                    this.redrawSidebar = true;
+                if (IfType.list[comId].layerId === this.sideIcon[this.activeIcon]) {
+                    this.redrawSide = true;
                 }
 
                 this.ptype = -1;
@@ -6499,16 +6499,16 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.TUT_FLASH) {
-                this.tutFlashingTab = this.in.g1();
+                this.tutFlashIcon = this.in.g1();
 
-                if (this.tutFlashingTab === this.sideTab) {
-                    if (this.tutFlashingTab === 3) {
-                        this.sideTab = 1;
+                if (this.tutFlashIcon === this.activeIcon) {
+                    if (this.tutFlashIcon === 3) {
+                        this.activeIcon = 1;
                     } else {
-                        this.sideTab = 3;
+                        this.activeIcon = 3;
                     }
 
-                    this.redrawSidebar = true;
+                    this.redrawSide = true;
                 }
 
                 this.ptype = -1;
@@ -6517,7 +6517,7 @@ export class Client extends GameShell {
 
             if (this.ptype === ServerProt.TUT_OPEN) {
                 this.tutComId = this.in.g2b();
-                this.redrawChatback = true;
+                this.redrawChat = true;
 
                 this.ptype = -1;
                 return true;
@@ -6542,7 +6542,7 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.UPDATE_INV_FULL) {
-                this.redrawSidebar = true;
+                this.redrawSide = true;
 
                 const comId: number = this.in.g2();
                 const inv: IfType = IfType.list[comId];
@@ -6573,7 +6573,7 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.UPDATE_INV_PARTIAL) {
-                this.redrawSidebar = true;
+                this.redrawSide = true;
 
                 const comId: number = this.in.g2();
                 const inv: IfType = IfType.list[comId];
@@ -6752,8 +6752,8 @@ export class Client extends GameShell {
                 this.chatPrivateMode = this.in.g1();
                 this.chatTradeMode = this.in.g1();
 
-                this.redrawPrivacySettings = true;
-                this.redrawChatback = true;
+                this.redrawChatMode = true;
+                this.redrawChat = true;
 
                 this.ptype = -1;
                 return true;
@@ -6807,7 +6807,7 @@ export class Client extends GameShell {
 
             if (this.ptype === ServerProt.FRIENDLIST_LOADED) {
                 this.friendServerStatus = this.in.g1();
-                this.redrawSidebar = true;
+                this.redrawSide = true;
 
                 this.ptype = -1;
                 return true;
@@ -6822,7 +6822,7 @@ export class Client extends GameShell {
                     if (username === this.friendUserhash[i]) {
                         if (this.friendNodeId[i] !== world) {
                             this.friendNodeId[i] = world;
-                            this.redrawSidebar = true;
+                            this.redrawSide = true;
                             if (world > 0) {
                                 this.addChat(5, displayName + ' has logged in.', '');
                             }
@@ -6841,7 +6841,7 @@ export class Client extends GameShell {
                     this.friendUsername[this.friendCount] = displayName;
                     this.friendNodeId[this.friendCount] = world;
                     this.friendCount++;
-                    this.redrawSidebar = true;
+                    this.redrawSide = true;
                 }
 
                 let sorted: boolean = false;
@@ -6861,7 +6861,7 @@ export class Client extends GameShell {
                             const oldUserhash: bigint = this.friendUserhash[i];
                             this.friendUserhash[i] = this.friendUserhash[i + 1];
                             this.friendUserhash[i + 1] = oldUserhash;
-                            this.redrawSidebar = true;
+                            this.redrawSide = true;
                             sorted = false;
                         }
                     }
@@ -6879,8 +6879,8 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.UPDATE_RUNWEIGHT) {
-                if (this.sideTab === 12) {
-                    this.redrawSidebar = true;
+                if (this.activeIcon === 12) {
+                    this.redrawSide = true;
                 }
 
                 this.runweight = this.in.g2b();
@@ -6936,7 +6936,7 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.UPDATE_STAT) {
-                this.redrawSidebar = true;
+                this.redrawSide = true;
 
                 const stat: number = this.in.g1();
                 const xp: number = this.in.g4();
@@ -6957,8 +6957,8 @@ export class Client extends GameShell {
             }
 
             if (this.ptype === ServerProt.UPDATE_RUNENERGY) {
-                if (this.sideTab === 12) {
-                    this.redrawSidebar = true;
+                if (this.activeIcon === 12) {
+                    this.redrawSide = true;
                 }
 
                 this.runenergy = this.in.g1();
@@ -7049,7 +7049,7 @@ export class Client extends GameShell {
                 this.socialInputOpen = false;
                 this.dialogInputOpen = true;
                 this.dialogInput = '';
-                this.redrawChatback = true;
+                this.redrawChat = true;
 
                 if (this.isMobile) {
                     MobileKeyboard.show();
@@ -7254,10 +7254,10 @@ export class Client extends GameShell {
                     this.var[varpId] = value;
                     this.clientVar(varpId);
 
-                    this.redrawSidebar = true;
+                    this.redrawSide = true;
 
                     if (this.tutComId !== -1) {
-                        this.redrawChatback = true;
+                        this.redrawChat = true;
                     }
                 }
 
@@ -7275,10 +7275,10 @@ export class Client extends GameShell {
                     this.var[varpId] = value;
                     this.clientVar(varpId);
 
-                    this.redrawSidebar = true;
+                    this.redrawSide = true;
 
                     if (this.tutComId !== -1) {
-                        this.redrawChatback = true;
+                        this.redrawChat = true;
                     }
                 }
 
@@ -7293,7 +7293,7 @@ export class Client extends GameShell {
                         this.var[i] = this.varServ[i];
                         this.clientVar(i);
 
-                        this.redrawSidebar = true;
+                        this.redrawSide = true;
                     }
                 }
 
@@ -8588,9 +8588,9 @@ export class Client extends GameShell {
                 this.isMenuOpen = false;
 
                 if (this.menuArea === 1) {
-                    this.redrawSidebar = true;
+                    this.redrawSide = true;
                 } else if (this.menuArea === 2) {
-                    this.redrawChatback = true;
+                    this.redrawChat = true;
                 }
             } else {
                 let x: number = this.mouseX;
@@ -8611,11 +8611,11 @@ export class Client extends GameShell {
                     this.isMenuOpen = false;
 
                     if (this.menuArea === 1) {
-                        this.redrawSidebar = true;
+                        this.redrawSide = true;
                     }
 
                     if (this.menuArea === 2) {
-                        this.redrawChatback = true;
+                        this.redrawChat = true;
                     }
                 }
             }
@@ -8645,7 +8645,7 @@ export class Client extends GameShell {
                             this.objDragArea = 1;
                         }
 
-                        if (IfType.list[comId].layerId === this.chatComId) {
+                        if (IfType.list[comId].layerId === this.chatModalId) {
                             this.objDragArea = 3;
                         }
 
@@ -8839,7 +8839,7 @@ export class Client extends GameShell {
 
         if (this.dialogInputOpen) {
             this.dialogInputOpen = false;
-            this.redrawChatback = true;
+            this.redrawChat = true;
         }
 
         let action: number = this.menuAction[optionId];
@@ -9276,7 +9276,7 @@ export class Client extends GameShell {
                 this.selectedArea = 1;
             }
 
-            if (IfType.list[c].layerId === this.chatComId) {
+            if (IfType.list[c].layerId === this.chatModalId) {
                 this.selectedArea = 3;
             }
         }
@@ -9304,7 +9304,7 @@ export class Client extends GameShell {
             this.objComId = a;
             this.objSelectedName = ObjType.list(a).name;
             this.targetMode = 0;
-            this.redrawSidebar = true;
+            this.redrawSide = true;
             return;
         }
 
@@ -9314,7 +9314,7 @@ export class Client extends GameShell {
             this.targetComId = c;
             this.targetMask = com.targetMask;
             this.useMode = 0;
-            this.redrawSidebar = true;
+            this.redrawSide = true;
 
             let prefix: string | null = com.targetVerb;
             if (prefix && prefix.indexOf(' ') !== -1) {
@@ -9329,9 +9329,9 @@ export class Client extends GameShell {
             this.targetOp = prefix + ' ' + com.targetBase + ' ' + suffix;
 
             if (this.targetMask === 0x10) {
-                this.redrawSidebar = true;
-                this.sideTab = 3;
-                this.redrawSideicons = true;
+                this.redrawSide = true;
+                this.activeIcon = 3;
+                this.redrawIcons = true;
             }
 
             return;
@@ -9353,7 +9353,7 @@ export class Client extends GameShell {
                 this.selectedArea = 1;
             }
 
-            if (IfType.list[c].layerId === this.chatComId) {
+            if (IfType.list[c].layerId === this.chatModalId) {
                 this.selectedArea = 3;
             }
         }
@@ -9376,7 +9376,7 @@ export class Client extends GameShell {
                 this.selectedArea = 1;
             }
 
-            if (IfType.list[c].layerId === this.chatComId) {
+            if (IfType.list[c].layerId === this.chatModalId) {
                 this.selectedArea = 3;
             }
         }
@@ -9423,7 +9423,7 @@ export class Client extends GameShell {
                 this.selectedArea = 1;
             }
 
-            if (IfType.list[c].layerId === this.chatComId) {
+            if (IfType.list[c].layerId === this.chatModalId) {
                 this.selectedArea = 3;
             }
         }
@@ -9451,7 +9451,7 @@ export class Client extends GameShell {
                 const varp: number = com.scripts[0][1];
                 this.var[varp] = 1 - this.var[varp];
                 this.clientVar(varp);
-                this.redrawSidebar = true;
+                this.redrawSide = true;
             }
         }
 
@@ -9465,7 +9465,7 @@ export class Client extends GameShell {
                 if (com.scriptOperand && this.var[varp] !== com.scriptOperand[0]) {
                     this.var[varp] = com.scriptOperand[0];
                     this.clientVar(varp);
-                    this.redrawSidebar = true;
+                    this.redrawSide = true;
                 }
             }
         }
@@ -9543,7 +9543,7 @@ export class Client extends GameShell {
                 }
 
                 if (friend !== -1 && this.friendNodeId[friend] > 0) {
-                    this.redrawChatback = true;
+                    this.redrawChat = true;
                     this.dialogInputOpen = false;
                     this.socialInputOpen = true;
                     this.socialInput = '';
@@ -9556,7 +9556,7 @@ export class Client extends GameShell {
 
         this.useMode = 0;
         this.targetMode = 0;
-        this.redrawSidebar = true;
+        this.redrawSide = true;
     }
 
     private addWorldOptions(): void {
@@ -10588,13 +10588,13 @@ export class Client extends GameShell {
             com.scrollPos -= this.scrollCycle * 4;
 
             if (redraw) {
-                this.redrawSidebar = true;
+                this.redrawSide = true;
             }
         } else if (x >= left && x < left + 16 && y >= top + height - 16 && y < top + height) {
             com.scrollPos += this.scrollCycle * 4;
 
             if (redraw) {
-                this.redrawSidebar = true;
+                this.redrawSide = true;
             }
         } else if (x >= left - this.scrollInputPadding && x < left + this.scrollInputPadding + 16 && y >= top + 16 && y < top + height - 16 && this.scrollCycle > 0) {
             let gripSize: number = (((height - 32) * height) / scrollableHeight) | 0;
@@ -10608,7 +10608,7 @@ export class Client extends GameShell {
             com.scrollPos = (((scrollableHeight - height) * gripY) / maxY) | 0;
 
             if (redraw) {
-                this.redrawSidebar = true;
+                this.redrawSide = true;
             }
 
             this.scrollGrabbed = true;
@@ -10965,7 +10965,7 @@ export class Client extends GameShell {
             this.chatEffects = value;
         } else if (clientcode === 8) {
             this.splitPrivateChat = value;
-            this.redrawChatback = true;
+            this.redrawChat = true;
         } else if (clientcode === 9) {
             this.bankArrangeMode = value;
         }
@@ -11230,14 +11230,14 @@ export class Client extends GameShell {
 
         if (this.sideModalId !== -1) {
             this.sideModalId = -1;
-            this.redrawSidebar = true;
+            this.redrawSide = true;
             this.resumedPauseButton = false;
-            this.redrawSideicons = true;
+            this.redrawIcons = true;
         }
 
-        if (this.chatComId !== -1) {
-            this.chatComId = -1;
-            this.redrawChatback = true;
+        if (this.chatModalId !== -1) {
+            this.chatModalId = -1;
+            this.redrawChat = true;
             this.resumedPauseButton = false;
         }
 
@@ -11249,14 +11249,14 @@ export class Client extends GameShell {
 
         if (this.friendServerStatus === 2) {
             if (clientCode === ClientCode.CC_ADD_FRIEND) {
-                this.redrawChatback = true;
+                this.redrawChat = true;
                 this.dialogInputOpen = false;
                 this.socialInputOpen = true;
                 this.socialInput = '';
                 this.socialInputType = 1;
                 this.socialInputHeader = 'Enter name of friend to add to list';
             } else if (clientCode === ClientCode.CC_DEL_FRIEND) {
-                this.redrawChatback = true;
+                this.redrawChat = true;
                 this.dialogInputOpen = false;
                 this.socialInputOpen = true;
                 this.socialInput = '';
@@ -11269,14 +11269,14 @@ export class Client extends GameShell {
             this.logoutTimer = 250;
             return true;
         } else if (clientCode === ClientCode.CC_ADD_IGNORE) {
-            this.redrawChatback = true;
+            this.redrawChat = true;
             this.dialogInputOpen = false;
             this.socialInputOpen = true;
             this.socialInput = '';
             this.socialInputType = 4;
             this.socialInputHeader = 'Enter name of player to add to list';
         } else if (clientCode === ClientCode.CC_DEL_IGNORE) {
-            this.redrawChatback = true;
+            this.redrawChat = true;
             this.dialogInputOpen = false;
             this.socialInputOpen = true;
             this.socialInput = '';
@@ -11382,7 +11382,7 @@ export class Client extends GameShell {
     }
 
     // todo: order
-    private drawSidebar(): void {
+    private drawSide(): void {
         this.areaSidebar?.setPixels();
         if (this.sidebarScanline) {
             Pix3D.scanline = this.sidebarScanline;
@@ -11392,8 +11392,8 @@ export class Client extends GameShell {
 
         if (this.sideModalId !== -1) {
             this.drawInterface(IfType.list[this.sideModalId], 0, 0, 0);
-        } else if (this.sideOverlayId[this.sideTab] !== -1) {
-            this.drawInterface(IfType.list[this.sideOverlayId[this.sideTab]], 0, 0, 0);
+        } else if (this.sideIcon[this.activeIcon] !== -1) {
+            this.drawInterface(IfType.list[this.sideIcon[this.activeIcon]], 0, 0, 0);
         }
 
         if (this.isMenuOpen && this.menuArea === 1) {
@@ -11426,8 +11426,8 @@ export class Client extends GameShell {
         } else if (this.tutComMessage) {
             this.b12?.centreString(this.tutComMessage, 239, 40, Colour.BLACK);
             this.b12?.centreString('Click to continue', 239, 60, Colour.DARKBLUE);
-        } else if (this.chatComId !== -1) {
-            this.drawInterface(IfType.list[this.chatComId], 0, 0, 0);
+        } else if (this.chatModalId !== -1) {
+            this.drawInterface(IfType.list[this.chatModalId], 0, 0, 0);
         } else if (this.tutComId !== -1) {
             this.drawInterface(IfType.list[this.tutComId], 0, 0, 0);
         } else {
@@ -11743,8 +11743,8 @@ export class Client extends GameShell {
             this.mouseClickButton = 0;
         }
 
-        if (this.chatComId === -1) {
-            this.redrawChatback = true;
+        if (this.chatModalId === -1) {
+            this.redrawChat = true;
         }
 
         for (let i: number = 99; i > 0; i--) {
@@ -11814,7 +11814,7 @@ export class Client extends GameShell {
             this.friendNodeId[this.friendCount] = 0;
             this.friendCount++;
 
-            this.redrawSidebar = true;
+            this.redrawSide = true;
 
             this.out.p1Enc(ClientProt.FRIENDLIST_ADD);
             this.out.p8(userhash);
@@ -11847,7 +11847,7 @@ export class Client extends GameShell {
         }
 
         this.ignoreUserhash[this.ignoreCount++] = userhash;
-        this.redrawSidebar = true;
+        this.redrawSide = true;
 
         this.out.p1Enc(ClientProt.IGNORELIST_ADD);
         this.out.p8(userhash);
@@ -11861,7 +11861,7 @@ export class Client extends GameShell {
         for (let i: number = 0; i < this.friendCount; i++) {
             if (this.friendUserhash[i] === userhash) {
                 this.friendCount--;
-                this.redrawSidebar = true;
+                this.redrawSide = true;
 
                 for (let j: number = i; j < this.friendCount; j++) {
                     this.friendUsername[j] = this.friendUsername[j + 1];
@@ -11884,7 +11884,7 @@ export class Client extends GameShell {
         for (let i: number = 0; i < this.ignoreCount; i++) {
             if (this.ignoreUserhash[i] === userhash) {
                 this.ignoreCount--;
-                this.redrawSidebar = true;
+                this.redrawSide = true;
 
                 for (let j: number = i; j < this.ignoreCount; j++) {
                     this.ignoreUserhash[j] = this.ignoreUserhash[j + 1];
@@ -12172,7 +12172,7 @@ export class Client extends GameShell {
         const chatInputAreaY1: number = 434;
         const chatInputAreaX2: number = chatInputAreaX1 + 479;
         const chatInputAreaY2: number = chatInputAreaY1 + 26;
-        return this.ingame && this.chatComId === -1 && !this.dialogInputOpen && !this.socialInputOpen && this.mouseX >= chatInputAreaX1 && this.mouseX <= chatInputAreaX2 && this.mouseY >= chatInputAreaY1 && this.mouseY <= chatInputAreaY2;
+        return this.ingame && this.chatModalId === -1 && !this.dialogInputOpen && !this.socialInputOpen && this.mouseX >= chatInputAreaX1 && this.mouseX <= chatInputAreaX2 && this.mouseY >= chatInputAreaY1 && this.mouseY <= chatInputAreaY2;
     }
 
     protected insideChatPopupArea() {
