@@ -302,10 +302,10 @@ export class Client extends GameShell {
     private flameGradientCycle1: number = 0;
     private flamesInterval: ReturnType<typeof setInterval> | null = null;
 
-    private areaSidebar: PixMap | null = null;
-    private areaMapback: PixMap | null = null;
-    private areaViewport: PixMap | null = null;
-    private areaChatback: PixMap | null = null;
+    private areaSide: PixMap | null = null;
+    private areaMap: PixMap | null = null;
+    private areaGame: PixMap | null = null;
+    private areaChat: PixMap | null = null;
     private areaBackbase1: PixMap | null = null;
     private areaBackbase2: PixMap | null = null;
     private areaBackhmid1: PixMap | null = null;
@@ -318,9 +318,9 @@ export class Client extends GameShell {
     private areaBackvmid2: PixMap | null = null;
     private areaBackvmid3: PixMap | null = null;
     private areaBackhmid2: PixMap | null = null;
-    private chatbackScanline: Int32Array | null = null;
-    private sidebarScanline: Int32Array | null = null;
-    private viewportScanline: Int32Array | null = null;
+    private chatScanline: Int32Array | null = null;
+    private sideScanline: Int32Array | null = null;
+    private gameScanline: Int32Array | null = null;
     private invback: Pix8 | null = null;
     private chatback: Pix8 | null = null;
     private backbase1: Pix8 | null = null;
@@ -1220,13 +1220,13 @@ export class Client extends GameShell {
             }
 
             Pix3D.setClipping(479, 96);
-            this.chatbackScanline = Pix3D.scanline;
+            this.chatScanline = Pix3D.scanline;
 
             Pix3D.setClipping(190, 261);
-            this.sidebarScanline = Pix3D.scanline;
+            this.sideScanline = Pix3D.scanline;
 
             Pix3D.setClipping(512, 334);
-            this.viewportScanline = Pix3D.scanline;
+            this.gameScanline = Pix3D.scanline;
 
             const distance: Int32Array = new Int32Array(9);
             for (let x: number = 0; x < 9; x++) {
@@ -1568,10 +1568,10 @@ export class Client extends GameShell {
         }
 
         this.drawArea = null;
-        this.areaChatback = null;
-        this.areaMapback = null;
-        this.areaSidebar = null;
-        this.areaViewport = null;
+        this.areaChat = null;
+        this.areaMap = null;
+        this.areaSide = null;
+        this.areaGame = null;
         this.areaBackbase1 = null;
         this.areaBackbase2 = null;
         this.areaBackhmid1 = null;
@@ -2295,7 +2295,7 @@ export class Client extends GameShell {
     }
 
     private prepareGame(): void {
-        if (this.areaChatback) {
+        if (this.areaChat) {
             return;
         }
 
@@ -2312,15 +2312,15 @@ export class Client extends GameShell {
         this.imageTitle7 = null;
         this.imageTitle8 = null;
 
-        this.areaChatback = new PixMap(479, 96);
+        this.areaChat = new PixMap(479, 96);
 
-        this.areaMapback = new PixMap(172, 156);
+        this.areaMap = new PixMap(172, 156);
         Pix2D.cls();
         this.mapback?.plotSprite(0, 0);
 
-        this.areaSidebar = new PixMap(190, 261);
+        this.areaSide = new PixMap(190, 261);
 
-        this.areaViewport = new PixMap(512, 334);
+        this.areaGame = new PixMap(512, 334);
         Pix2D.cls();
 
         this.areaBackbase1 = new PixMap(496, 50);
@@ -2785,12 +2785,12 @@ export class Client extends GameShell {
             return;
         }
 
-        this.areaViewport?.setPixels();
+        this.areaGame?.setPixels();
         this.p12?.centreString('Connection lost', 257, 144, Colour.BLACK);
         this.p12?.centreString('Connection lost', 256, 143, Colour.WHITE);
         this.p12?.centreString('Please wait - attempting to reestablish', 257, 159, Colour.BLACK);
         this.p12?.centreString('Please wait - attempting to reestablish', 256, 158, Colour.WHITE);
-        this.areaViewport?.draw(4, 4);
+        this.areaGame?.draw(4, 4);
 
         this.minimapState = 0;
         this.minimapFlagX = 0;
@@ -2817,7 +2817,6 @@ export class Client extends GameShell {
         this.addPrivateChatOptions();
         this.lastOverComId = 0;
 
-        // the main viewport area
         if (this.mouseX > 4 && this.mouseY > 4 && this.mouseX < 516 && this.mouseY < 338) {
             if (this.mainModalId === -1) {
                 this.addWorldOptions();
@@ -2832,7 +2831,6 @@ export class Client extends GameShell {
 
         this.lastOverComId = 0;
 
-        // the sidebar/tabs area
         if (this.mouseX > 553 && this.mouseY > 205 && this.mouseX < 743 && this.mouseY < 466) {
             if (this.sideModalId !== -1) {
                 this.addComponentOptions(IfType.list[this.sideModalId], this.mouseX, this.mouseY, 553, 205, 0);
@@ -2848,7 +2846,6 @@ export class Client extends GameShell {
 
         this.lastOverComId = 0;
 
-        // the chatbox area
         if (this.mouseX > 17 && this.mouseY > 357 && this.mouseX < 496 && this.mouseY < 453) {
             if (this.chatModalId !== -1) {
                 this.addComponentOptions(IfType.list[this.chatModalId], this.mouseX, this.mouseY, 17, 357, 0);
@@ -4198,8 +4195,8 @@ export class Client extends GameShell {
             this.redrawChatMode = true;
 
             if (this.sceneState !== 2) {
-                this.areaViewport?.draw(4, 4);
-                this.areaMapback?.draw(550, 4);
+                this.areaGame?.draw(4, 4);
+                this.areaMap?.draw(550, 4);
             }
         }
 
@@ -4283,7 +4280,7 @@ export class Client extends GameShell {
 
         if (this.sceneState === 2) {
             this.minimapDraw();
-            this.areaMapback?.draw(550, 4);
+            this.areaMap?.draw(550, 4);
         }
 
         if (this.tutFlashIcon !== -1) {
@@ -4400,7 +4397,7 @@ export class Client extends GameShell {
 
             this.areaBackbase2?.draw(496, 466);
 
-            this.areaViewport?.setPixels();
+            this.areaGame?.setPixels();
         }
 
         if (this.redrawChatMode) {
@@ -4449,7 +4446,7 @@ export class Client extends GameShell {
 
             this.areaBackbase1?.draw(0, 453);
 
-            this.areaViewport?.setPixels();
+            this.areaGame?.setPixels();
         }
 
         this.worldUpdateNum = 0;
@@ -4534,7 +4531,7 @@ export class Client extends GameShell {
         this.coordArrow();
         this.textureRunAnims(cycle);
         this.otherOverlays();
-        this.areaViewport?.draw(4, 4);
+        this.areaGame?.draw(4, 4);
 
         this.camX = camX;
         this.camY = camY;
@@ -5361,10 +5358,10 @@ export class Client extends GameShell {
 
     private checkMinimap(): void {
         if (Client.lowMem && this.sceneState === 2 && ClientBuild.minusedlevel !== this.minusedlevel) {
-            this.areaViewport?.setPixels();
+            this.areaGame?.setPixels();
             this.p12?.centreString('Loading - please wait.', 257, 151, Colour.BLACK);
             this.p12?.centreString('Loading - please wait.', 256, 150, Colour.WHITE);
-            this.areaViewport?.draw(4, 4);
+            this.areaGame?.draw(4, 4);
             this.sceneState = 1;
             this.sceneLoadStartTime = performance.now();
         }
@@ -5502,7 +5499,7 @@ export class Client extends GameShell {
             this.out.p1Enc(ClientProt.NO_TIMEOUT);
 
             build.finishBuild(this.world, this.collision);
-            this.areaViewport?.setPixels();
+            this.areaGame?.setPixels();
 
             this.out.p1Enc(ClientProt.NO_TIMEOUT);
 
@@ -5607,7 +5604,7 @@ export class Client extends GameShell {
             }
         }
 
-        this.areaViewport?.setPixels();
+        this.areaGame?.setPixels();
 
         this.activeMapFunctionCount = 0;
 
@@ -7115,10 +7112,10 @@ export class Client extends GameShell {
                 this.sceneState = 1;
                 this.sceneLoadStartTime = performance.now();
 
-                this.areaViewport?.setPixels();
+                this.areaGame?.setPixels();
                 this.p12?.centreString('Loading - please wait.', 257, 151, Colour.BLACK);
                 this.p12?.centreString('Loading - please wait.', 256, 150, Colour.WHITE);
-                this.areaViewport?.draw(4, 4);
+                this.areaGame?.draw(4, 4);
 
                 let regions = 0;
                 for (let x = ((this.mapBuildCentreZoneX - 6) / 8) | 0; x <= (((this.mapBuildCentreZoneX + 6) / 8) | 0); x++) {
@@ -8544,7 +8541,7 @@ export class Client extends GameShell {
             return;
         }
 
-        if (this.isMobile && this.dialogInputOpen && this.insideChatPopupArea()) {
+        if (this.isMobile && this.dialogInputOpen && this.insideChatPopup()) {
             return;
         }
 
@@ -8744,7 +8741,6 @@ export class Client extends GameShell {
         let x: number;
         let y: number;
 
-        // the main viewport area
         if (this.mouseClickX > 4 && this.mouseClickY > 4 && this.mouseClickX < 516 && this.mouseClickY < 338) {
             x = this.mouseClickX - ((width / 2) | 0) - 4;
             if (x + width > 512) {
@@ -11383,9 +11379,9 @@ export class Client extends GameShell {
 
     // todo: order
     private drawSide(): void {
-        this.areaSidebar?.setPixels();
-        if (this.sidebarScanline) {
-            Pix3D.scanline = this.sidebarScanline;
+        this.areaSide?.setPixels();
+        if (this.sideScanline) {
+            Pix3D.scanline = this.sideScanline;
         }
 
         this.invback?.plotSprite(0, 0);
@@ -11400,19 +11396,19 @@ export class Client extends GameShell {
             this.drawMinimenu();
         }
 
-        this.areaSidebar?.draw(553, 205);
+        this.areaSide?.draw(553, 205);
 
-        this.areaViewport?.setPixels();
-        if (this.viewportScanline) {
-            Pix3D.scanline = this.viewportScanline;
+        this.areaGame?.setPixels();
+        if (this.gameScanline) {
+            Pix3D.scanline = this.gameScanline;
         }
     }
 
     // todo: order
     private drawChat(): void {
-        this.areaChatback?.setPixels();
-        if (this.chatbackScanline) {
-            Pix3D.scanline = this.chatbackScanline;
+        this.areaChat?.setPixels();
+        if (this.chatScanline) {
+            Pix3D.scanline = this.chatScanline;
         }
 
         this.chatback?.plotSprite(0, 0);
@@ -11555,11 +11551,11 @@ export class Client extends GameShell {
             this.drawMinimenu();
         }
 
-        this.areaChatback?.draw(17, 357);
+        this.areaChat?.draw(17, 357);
 
-        this.areaViewport?.setPixels();
-        if (this.viewportScanline) {
-            Pix3D.scanline = this.viewportScanline;
+        this.areaGame?.setPixels();
+        if (this.gameScanline) {
+            Pix3D.scanline = this.gameScanline;
         }
     }
 
@@ -11568,7 +11564,7 @@ export class Client extends GameShell {
             return;
         }
 
-        this.areaMapback?.setPixels();
+        this.areaMap?.setPixels();
 
         if (this.minimapState == 2) {
             if (this.mapback !== null) {
@@ -11584,7 +11580,7 @@ export class Client extends GameShell {
 
             this.compass?.scanlineRotatePlotSprite(0, 0, 33, 33, 25, 25, this.orbitCameraYaw, 256, this.compassMaskLineOffsets, this.compassMaskLineLengths);
 
-            this.areaViewport?.setPixels();
+            this.areaGame?.setPixels();
             return;
         }
 
@@ -11677,7 +11673,7 @@ export class Client extends GameShell {
         // the white square local player position in the center of the minimap.
         Pix2D.fillRect(97, 78, 3, 3, Colour.WHITE);
 
-        this.areaViewport?.setPixels();
+        this.areaGame?.setPixels();
     }
 
     minimapDrawArrow(dx: number, dy: number, image: Pix32 | null) {
@@ -11900,9 +11896,9 @@ export class Client extends GameShell {
     // ----
 
     /// touch controls
-    private startedInViewport: boolean = false;
-    private startedInTabArea: boolean = false;
-    private startedInChatScroll: boolean = false;
+    private startedInGame: boolean = false;
+    private startedInSide: boolean = false;
+    private startedInChat: boolean = false;
     private ttime: number = -1;
     // start
     private sx: number = 0;
@@ -11938,9 +11934,9 @@ export class Client extends GameShell {
             this.sy = this.ny = this.my = e.screenY | 0;
             this.ttime = e.timeStamp;
 
-            this.startedInViewport = this.insideViewportArea();
-            this.startedInTabArea = this.insideTabArea();
-            this.startedInChatScroll = this.insideChatScrollArea();
+            this.startedInGame = this.insideGame();
+            this.startedInSide = this.insideSide();
+            this.startedInChat = this.insideChat();
         }
     }
 
@@ -11975,7 +11971,7 @@ export class Client extends GameShell {
                 this.nextMouseClickButton = 0;
                 this.mouseButton = 0;
             } else if (this.panning) {
-                // ignore up events if the player was moving the camera in the viewport
+                // ignore up events if the player was moving the camera
                 this.panning = false;
 
                 // release all arrow keys
@@ -11985,7 +11981,7 @@ export class Client extends GameShell {
                 this.keyHeld[4] = 0;
                 return;
             } else {
-                if (!MobileKeyboard.isDisplayed() && this.insideMobileInputArea()) {
+                if (!MobileKeyboard.isDisplayed() && this.insideMobileInput()) {
                     // show keyboard when tapping in an input area
                     MobileKeyboard.show(x, y, e.clientX, e.clientY);
                 } else if (MobileKeyboard.isDisplayed() && !MobileKeyboard.isWithinCanvasKeyboard(x, y)) {
@@ -12035,8 +12031,8 @@ export class Client extends GameShell {
             this.sy = this.ny = this.my = e.screenY | 0;
             this.ttime = e.timeStamp;
 
-            this.startedInViewport = this.insideViewportArea();
-            this.startedInTabArea = this.insideTabArea();
+            this.startedInGame = this.insideGame();
+            this.startedInSide = this.insideSide();
         }
     }
 
@@ -12081,7 +12077,7 @@ export class Client extends GameShell {
                 // no-op
             } else if (MobileKeyboard.isWithinCanvasKeyboard(x, y) && this.exceedsGrabThreshold(20)) {
                 MobileKeyboard.notifyTouchMove(x, y);
-            } else if (this.startedInViewport && !this.isViewportObscured() && this.exceedsGrabThreshold(20)) {
+            } else if (this.startedInGame && !this.isGameObscured() && this.exceedsGrabThreshold(20)) {
                 // moving camera
                 this.panning = true;
 
@@ -12105,7 +12101,7 @@ export class Client extends GameShell {
                     this.keyHeld[3] = 1;
                     this.keyHeld[4] = 0;
                 }
-            } else if (this.startedInTabArea || this.startedInChatScroll || this.isViewportObscured()) {
+            } else if (this.startedInSide || this.startedInChat || this.isGameObscured()) {
                 if (!this.dragging && this.exceedsGrabThreshold(5)) {
                     this.dragging = true;
 
@@ -12134,93 +12130,87 @@ export class Client extends GameShell {
         return Math.abs(this.sx - this.nx) > size || Math.abs(this.sy - this.ny) > size;
     }
 
-    private isViewportObscured(): boolean {
+    private isGameObscured(): boolean {
         return this.mainModalId !== -1;
     }
 
-    private insideMobileInputArea(): boolean {
-        return this.insideChatInputArea() || this.insideChatPopupArea() || this.insideUsernameArea() || this.inPasswordArea() || this.insideReportInterfaceTextArea();
+    private insideMobileInput(): boolean {
+        return this.insideChatInput() || this.insideChatPopup() || this.insideLoginUser() || this.insideLoginPass() || this.insideReportAbuse();
     }
 
-    private insideViewportArea() {
-        // 512 x 334
-        const viewportAreaX1: number = 4;
-        const viewportAreaY1: number = 4;
-        const viewportAreaX2: number = viewportAreaX1 + 512;
-        const viewportAreaY2: number = viewportAreaY1 + 334;
-        return this.ingame && this.mouseX >= viewportAreaX1 && this.mouseX <= viewportAreaX2 && this.mouseY >= viewportAreaY1 && this.mouseY <= viewportAreaY2;
+    private insideGame() {
+        const x1: number = 4;
+        const y1: number = 4;
+        const x2: number = x1 + 512;
+        const y2: number = y1 + 334;
+        return this.ingame && this.mouseX >= x1 && this.mouseX <= x2 && this.mouseY >= y1 && this.mouseY <= y2;
     }
 
-    private insideTabArea() {
-        const tabAreaX1: number = 553;
-        const tabAreaY1: number = 205;
-        const tabAreaX2: number = tabAreaX1 + 190;
-        const tabAreaY2: number = tabAreaY1 + 261;
-        return this.ingame && this.mouseX >= tabAreaX1 && this.mouseX <= tabAreaX2 && this.mouseY >= tabAreaY1 && this.mouseY <= tabAreaY2;
+    private insideSide() {
+        const x1: number = 553;
+        const y1: number = 205;
+        const x2: number = x1 + 190;
+        const y2: number = y1 + 261;
+        return this.ingame && this.mouseX >= x1 && this.mouseX <= x2 && this.mouseY >= y1 && this.mouseY <= y2;
     }
 
-    private insideChatScrollArea() {
-        const chatInputAreaX1: number = 480;
-        const chatInputAreaY1: number = 357;
-        const chatInputAreaX2: number = chatInputAreaX1 + 16;
-        const chatInputAreaY2: number = chatInputAreaY1 + 77;
-        return this.ingame && !this.dialogInputOpen && !this.socialInputOpen && this.mouseX >= chatInputAreaX1 && this.mouseX <= chatInputAreaX2 && this.mouseY >= chatInputAreaY1 && this.mouseY <= chatInputAreaY2;
+    private insideChat() {
+        const x1: number = 480;
+        const y1: number = 357;
+        const x2: number = x1 + 16;
+        const y2: number = y1 + 77;
+        return this.ingame && !this.dialogInputOpen && !this.socialInputOpen && this.mouseX >= x1 && this.mouseX <= x2 && this.mouseY >= y1 && this.mouseY <= y2;
     }
 
-    private insideChatInputArea() {
-        const chatInputAreaX1: number = 17;
-        const chatInputAreaY1: number = 434;
-        const chatInputAreaX2: number = chatInputAreaX1 + 479;
-        const chatInputAreaY2: number = chatInputAreaY1 + 26;
-        return this.ingame && this.chatModalId === -1 && !this.dialogInputOpen && !this.socialInputOpen && this.mouseX >= chatInputAreaX1 && this.mouseX <= chatInputAreaX2 && this.mouseY >= chatInputAreaY1 && this.mouseY <= chatInputAreaY2;
+    private insideChatInput() {
+        const x1: number = 17;
+        const y1: number = 434;
+        const x2: number = x1 + 479;
+        const y2: number = y1 + 26;
+        return this.ingame && this.chatModalId === -1 && !this.dialogInputOpen && !this.socialInputOpen && this.mouseX >= x1 && this.mouseX <= x2 && this.mouseY >= y1 && this.mouseY <= y2;
     }
 
-    protected insideChatPopupArea() {
-        const chatInputAreaX1: number = 17;
-        const chatInputAreaY1: number = 357;
-        const chatInputAreaX2: number = chatInputAreaX1 + 479;
-        const chatInputAreaY2: number = chatInputAreaY1 + 96;
-        return this.ingame && (this.dialogInputOpen || this.socialInputOpen) && this.mouseX >= chatInputAreaX1 && this.mouseX <= chatInputAreaX2 && this.mouseY >= chatInputAreaY1 && this.mouseY <= chatInputAreaY2;
+    protected insideChatPopup() {
+        const x1: number = 17;
+        const y1: number = 357;
+        const x2: number = x1 + 479;
+        const y2: number = y1 + 96;
+        return this.ingame && (this.dialogInputOpen || this.socialInputOpen) && this.mouseX >= x1 && this.mouseX <= x2 && this.mouseY >= y1 && this.mouseY <= y2;
     }
 
-    private insideReportInterfaceTextArea() {
-        // actual component size is [233, 137, 58 14]
-        // extended it a little bit for easier interaction, since the area to
-        // touch is not obvious (it's a bit narrow)
+    private insideReportAbuse() {
         if (!this.ingame) {
             return false;
         }
 
-        // either viewport or report-abuse interface Ids are bad
         if (this.mainModalId === -1 || this.reportAbuseComId === -1) {
             return false;
         }
 
-        // active viewport interface Id does not match
         if (this.mainModalId !== this.reportAbuseComId) {
             return false;
         }
 
-        const reportInputAreaX1: number = 87;
-        const reportInputAreaY1: number = 119;
-        const reportInputAreaX2: number = reportInputAreaX1 + 348;
-        const reportInputAreaY2: number = reportInputAreaY1 + 37;
-        return this.mouseX >= reportInputAreaX1 && this.mouseX <= reportInputAreaX2 && this.mouseY >= reportInputAreaY1 && this.mouseY <= reportInputAreaY2;
+        const x1: number = 87;
+        const y1: number = 119;
+        const x2: number = x1 + 348;
+        const y2: number = y1 + 37;
+        return this.mouseX >= x1 && this.mouseX <= x2 && this.mouseY >= y1 && this.mouseY <= y2;
     }
 
-    private insideUsernameArea() {
-        const usernameAreaX1: number = 280;
-        const usernameAreaY1: number = 233;
-        const usernameAreaX2: number = usernameAreaX1 + 190;
-        const usernameAreaY2: number = usernameAreaY1 + 31;
-        return !this.ingame && this.loginscreen === 2 && this.mouseX >= usernameAreaX1 && this.mouseX <= usernameAreaX2 && this.mouseY >= usernameAreaY1 && this.mouseY <= usernameAreaY2;
+    private insideLoginUser() {
+        const x1: number = 280;
+        const y1: number = 233;
+        const x2: number = x1 + 190;
+        const y2: number = y1 + 31;
+        return !this.ingame && this.loginscreen === 2 && this.mouseX >= x1 && this.mouseX <= x2 && this.mouseY >= y1 && this.mouseY <= y2;
     }
 
-    private inPasswordArea() {
-        const passwordAreaX1: number = 280;
-        const passwordAreaY1: number = 264;
-        const passwordAreaX2: number = passwordAreaX1 + 278;
-        const passwordAreaY2: number = passwordAreaY1 + 20;
-        return !this.ingame && this.loginscreen === 2 && this.mouseX >= passwordAreaX1 && this.mouseX <= passwordAreaX2 && this.mouseY >= passwordAreaY1 && this.mouseY <= passwordAreaY2;
+    private insideLoginPass() {
+        const x1: number = 280;
+        const y1: number = 264;
+        const x2: number = x1 + 278;
+        const y2: number = y1 + 20;
+        return !this.ingame && this.loginscreen === 2 && this.mouseX >= x1 && this.mouseX <= x2 && this.mouseY >= y1 && this.mouseY <= y2;
     }
 }
