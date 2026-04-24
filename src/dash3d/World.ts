@@ -80,6 +80,8 @@ const TEXTURE_AVERAGE = Uint16Array.of(
     41, 41, 41
 );
 
+const OCCLUDER_LEVELS = 4;
+
 export default class World {
     static lowMem: boolean = true;
 
@@ -118,8 +120,8 @@ export default class World {
     static numActiveOccluders: number = 0;
     private static activeOccluders: (Occlude | null)[] = new TypedArray1d(500, null);
 
-    static numOccluders: Int32Array = new Int32Array(BuildArea.LEVELS);
-    private static occluders: (Occlude | null)[][] = new TypedArray2d(BuildArea.LEVELS, 500, null);
+    static numOccluders: Int32Array = new Int32Array(OCCLUDER_LEVELS);
+    private static occluders: (Occlude | null)[][] = new TypedArray2d(OCCLUDER_LEVELS, 500, null);
 
     private static spriteBuffer: (Sprite | null)[] = new TypedArray1d(100, null);
 
@@ -165,7 +167,7 @@ export default class World {
             }
         }
 
-        for (let l: number = 0; l < BuildArea.LEVELS; l++) {
+        for (let l: number = 0; l < OCCLUDER_LEVELS; l++) {
             for (let o: number = 0; o < World.numOccluders[l]; o++) {
                 World.occluders[l][o] = null;
             }

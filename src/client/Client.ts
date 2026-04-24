@@ -2630,7 +2630,7 @@ export class Client extends GameShell {
         if (checkClickInput) {
             this.mouseLoop();
             this.minimapLoop();
-            this.tabLoop();
+            this.iconLoop();
             this.chatModeLoop();
         }
 
@@ -3078,7 +3078,7 @@ export class Client extends GameShell {
     }
 
     // todo: order
-    private tabLoop(): void {
+    private iconLoop(): void {
         if (this.mouseClickButton !== 1) {
             return;
         }
