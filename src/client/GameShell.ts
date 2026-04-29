@@ -192,7 +192,7 @@ export default abstract class GameShell {
 
                 await this.mainloop();
 
-                // this.keyQueueReadPos = this.keyQueueWritePos;
+                this.keyQueueReadPos = this.keyQueueWritePos;
                 count += ratio;
             }
             count &= 0xff;
