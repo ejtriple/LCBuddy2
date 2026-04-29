@@ -163,7 +163,7 @@ class WorkerOnDemand {
     packetCycle: number = 0;
     noTimeoutCycle: number = 0;
     cycle: number = 0;
-    socketOpenTime: number = 0;
+    socketOpenTime: number = -4000;
     current: WorkerRequest | null = null;
     stream: ClientStream | null = null;
     loopTimer: ReturnType<typeof setTimeout> | null = null;
