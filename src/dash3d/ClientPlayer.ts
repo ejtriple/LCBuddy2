@@ -477,7 +477,7 @@ export default class ClientPlayer extends ClientEntity {
 
             if (needsModel) {
                 if (this.modelCacheKey !== -1n) {
-                    model = ClientPlayer.modelCache.find(this.baseId);
+                    model = ClientPlayer.modelCache.find(this.modelCacheKey);
                 }
 
                 if (model == null) {
