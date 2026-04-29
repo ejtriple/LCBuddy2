@@ -2070,7 +2070,7 @@ export class Client extends GameShell {
                     this.loginout.p4(this.jagChecksum[i]);
                 }
 
-                this.loginout.pdata(this.out.data, this.out.pos, 0);
+                this.loginout.pdata(this.out.data, 0, this.out.pos);
                 this.out.random = new Isaac(seed);
                 for (let i: number = 0; i < 4; i++) {
                     seed[i] += 50;
