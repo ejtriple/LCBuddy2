@@ -877,9 +877,6 @@ export class Client extends GameShell {
             AnimFrame.init(this.onDemand.getAnimFrameCount());
             Model.init(this.onDemand.getFileCount(0), this.onDemand);
 
-            await this.messageBox('Preloading cache', 62);
-            await this.onDemand.prefetchAll();
-
             if (!Client.lowMem) {
                 this.midiSong = 0; // scape_main
                 this.midiFading = false;
@@ -988,8 +985,7 @@ export class Client extends GameShell {
                 }
 
                 if (priority != 0) {
-                    this.onDemand.requestModel(i);
-                    // await this.onDemand.prefetchPriority(0, i, priority);
+                    await this.onDemand.prefetchPriority(0, i, priority);
                 }
             }
 
@@ -997,9 +993,9 @@ export class Client extends GameShell {
 
             if (!Client.lowMem) {
                 const midiCount = this.onDemand.getFileCount(2);
-                for (let i = 0; i < midiCount; i++) {
+                for (let i = 1; i < midiCount; i++) {
                     if (this.onDemand.isMidiJingle(i)) {
-                        this.onDemand.prefetchPriority(2, i, 1);
+                        await this.onDemand.prefetchPriority(2, i, 1);
                     }
                 }
             }

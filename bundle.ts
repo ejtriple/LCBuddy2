@@ -111,7 +111,25 @@ async function applyTerser(script: BunOutput): Promise<boolean> {
 
                     // dns-json response fields
                     'Status',
-                    'Answer'
+                    'Answer',
+
+                    // main thread <-> ondemand worker protocol
+                    'type',
+                    'versions',
+                    'crcs',
+                    'host',
+                    'secured',
+                    'ingame',
+                    'dbEnabled',
+                    'archive',
+                    'file',
+                    'priority',
+                    'urgent',
+                    'data',
+                    'message',
+                    'failCount',
+                    'error',
+                    'id'
                 ]
             }
         }
@@ -135,7 +153,8 @@ const prod = args[0] !== 'dev';
 
 const entrypoints = [
     'src/client/Client.ts',
-    'src/mapview/MapView.ts'
+    'src/mapview/MapView.ts',
+    'src/io/OnDemandWorker.ts'
 ];
 
 for (const file of entrypoints) {
