@@ -38,8 +38,17 @@ export default abstract class GameShell {
     /// custom
     protected resizeToFit: boolean = false;
     protected tfps: number = 50;
+    private absMouseX: number = 0;
+    private absMouseY: number = 0;
+
+    private readonly resizeHandler = (): void => {
+        if (this.resizeToFit) {
+            this.resize(window.innerWidth, window.innerHeight);
+        }
+    };
 
     protected async maininit() { }
+    protected unload() { }
     protected async mainloop() { }
     protected async maindraw() { }
     protected refresh() { }
@@ -73,15 +82,7 @@ export default abstract class GameShell {
     }
 
     async run() {
-        canvas.addEventListener(
-            'resize',
-            (): void => {
-                if (this.resizeToFit) {
-                    this.resize(window.innerWidth, window.innerHeight);
-                }
-            },
-            false
-        );
+        window.addEventListener('resize', this.resizeHandler, false);
 
         canvas.onfocus = this.onfocus.bind(this);
         canvas.onblur = this.onblur.bind(this);
@@ -230,6 +231,25 @@ export default abstract class GameShell {
 
     protected shutdown() {
         this.state = -2;
+        this.unload();
+
+        window.removeEventListener('resize', this.resizeHandler, false);
+        canvas.onfocus = null;
+        canvas.onblur = null;
+        canvas.onkeydown = null;
+        canvas.onkeyup = null;
+        canvas.onmousedown = null;
+        canvas.onpointerdown = null;
+        canvas.onmouseup = null;
+        canvas.onpointerup = null;
+        canvas.onpointerenter = null;
+        canvas.onpointerleave = null;
+        canvas.onpointermove = null;
+        canvas.ontouchstart = null;
+        canvas.oncontextmenu = null;
+        window.onmouseup = null;
+        window.onmousemove = null;
+        window.oncontextmenu = null;
     }
 
     protected setFramerate(rate: number) {
@@ -290,9 +310,9 @@ export default abstract class GameShell {
             return;
         }
 
-        const { x, y } = this.getMousePos(e);
+        this.getMousePos(e);
 
-        this.mouseDown(x, y, e);
+        this.mouseDown(this.absMouseX, this.absMouseY, e);
     }
 
     protected mouseDown(x: number, y: number, e: MouseEvent) {
@@ -319,18 +339,18 @@ export default abstract class GameShell {
             return;
         }
 
-        const { x, y } = this.getMousePos(e);
+        this.getMousePos(e);
 
-        this.pointerDown(x, y, e);
+        this.pointerDown(this.absMouseX, this.absMouseY, e);
     }
 
     protected pointerDown(_x: number, _y: number, _e: PointerEvent) {
     }
 
     private onmouseup(e: MouseEvent) {
-        const { x, y } = this.getMousePos(e);
+        this.getMousePos(e);
 
-        this.mouseUp(x, y, e);
+        this.mouseUp(this.absMouseX, this.absMouseY, e);
     }
 
     protected mouseUp(x: number, y: number, e: MouseEvent) {
@@ -343,9 +363,9 @@ export default abstract class GameShell {
     }
 
     private onpointerup(e: PointerEvent) {
-        const { x, y } = this.getMousePos(e);
+        this.getMousePos(e);
 
-        this.pointerUp(x, y, e);
+        this.pointerUp(this.absMouseX, this.absMouseY, e);
     }
 
     protected pointerUp(_x: number, _y: number, _e: PointerEvent) {
@@ -356,9 +376,9 @@ export default abstract class GameShell {
             return;
         }
 
-        const { x, y } = this.getMousePos(e);
+        this.getMousePos(e);
 
-        this.pointerEnter(x, y, e);
+        this.pointerEnter(this.absMouseX, this.absMouseY, e);
     }
 
     protected pointerEnter(x: number, y: number, _e: PointerEvent) {
@@ -387,9 +407,9 @@ export default abstract class GameShell {
             return;
         }
 
-        const { x, y } = this.getMousePos(e);
+        this.getMousePos(e);
 
-        this.pointerMove(x, y, e);
+        this.pointerMove(this.absMouseX, this.absMouseY, e);
     }
 
     protected pointerMove(x: number, y: number, e: PointerEvent) {
@@ -531,15 +551,13 @@ export default abstract class GameShell {
         return document.fullscreenElement !== null;
     }
 
-    private getMousePos(e: MouseEvent): { x: number; y: number } {
+    private getMousePos(e: MouseEvent): void {
         const fixedWidth: number = this.sWid;
         const fixedHeight: number = this.sHei;
 
         const canvasBounds: DOMRect = canvas.getBoundingClientRect();
-        const clickLocWithinCanvas = {
-            x: e.clientX - canvasBounds.left,
-            y: e.clientY - canvasBounds.top
-        };
+        const clickX = e.clientX - canvasBounds.left;
+        const clickY = e.clientY - canvasBounds.top;
         let x = 0;
         let y = 0;
 
@@ -572,13 +590,13 @@ export default abstract class GameShell {
             }
             const scaleX = fixedWidth / trueCanvasWidth;
             const scaleY = fixedHeight / trueCanvasHeight;
-            x = ((clickLocWithinCanvas.x - offsetX) * scaleX) | 0;
-            y = ((clickLocWithinCanvas.y - offsetY) * scaleY) | 0;
+            x = ((clickX - offsetX) * scaleX) | 0;
+            y = ((clickY - offsetY) * scaleY) | 0;
         } else {
             const scaleX: number = canvas.width / canvasBounds.width;
             const scaleY: number = canvas.height / canvasBounds.height;
-            x = (clickLocWithinCanvas.x * scaleX) | 0;
-            y = (clickLocWithinCanvas.y * scaleY) | 0;
+            x = (clickX * scaleX) | 0;
+            y = (clickY * scaleY) | 0;
         }
 
         // Specifically filter events outside of bounds of canvas; this can
@@ -602,6 +620,7 @@ export default abstract class GameShell {
             y = fixedHeight;
         }
 
-        return { x, y };
+        this.absMouseX = x;
+        this.absMouseY = y;
     }
 }

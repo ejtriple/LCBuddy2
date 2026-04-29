@@ -152,6 +152,8 @@ export default class OnDemand extends OnDemandProvider {
 
     stop() {
         this.running = false;
+        this.stream?.close();
+        this.stream = null;
     }
 
     getFileCount(archive: number) {
@@ -246,7 +248,7 @@ export default class OnDemand extends OnDemandProvider {
             return req;
         }
 
-        req.data = gunzipSync(req.data.slice(0, req.data.length - 2));
+        req.data = gunzipSync(req.data.subarray(0, req.data.length - 2));
         return req;
     }
 

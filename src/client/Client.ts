@@ -148,6 +148,7 @@ export class Client extends GameShell {
     private prevMouseClickTime: number = 0;
     private mouseTracked: boolean = false;
     private mouseTracking: MouseTracking = new MouseTracking(this);
+    private mouseTrackingInterval: ReturnType<typeof setInterval> | null = null;
     private mouseTrackedX: number = 0;
     private mouseTrackedY: number = 0;
     private mouseTrackDelta: number = 0;
@@ -1239,9 +1240,11 @@ export class Client extends GameShell {
             World.resetVisCalc(distance, 500, 800, 512, 334);
             WordFilter.unpack(wordenc);
 
-            setInterval(() => {
-                this.mouseTracking.cycle();
-            }, 50);
+            if (!this.mouseTrackingInterval) {
+                this.mouseTrackingInterval = setInterval(() => {
+                    this.mouseTracking.cycle();
+                }, 50);
+            }
         } catch (e) {
             console.error(e);
 
@@ -1292,6 +1295,22 @@ export class Client extends GameShell {
 
     override refresh() {
         this.redrawFrame = true;
+    }
+
+    protected override unload(): void {
+        this.stream?.close();
+        this.stream = null;
+
+        if (this.mouseTrackingInterval) {
+            clearInterval(this.mouseTrackingInterval);
+            this.mouseTrackingInterval = null;
+        }
+
+        this.onDemand?.stop();
+        this.onDemand = null;
+
+        this.unloadTitle();
+        this.drawArea = null;
     }
 
     // ----
@@ -1809,9 +1828,7 @@ export class Client extends GameShell {
             }
         }
 
-        for (let y: number = 0; y < height - 1; y++) {
-            this.flameLineOffset[y] = this.flameLineOffset[y + 1];
-        }
+        this.flameLineOffset.copyWithin(0, 1, height);
 
         this.flameLineOffset[height - 1] = (Math.sin(this.loopCycle / 14.0) * 16.0 + Math.sin(this.loopCycle / 15.0) * 14.0 + Math.sin(this.loopCycle / 16.0) * 12.0) | 0;
 
@@ -1910,13 +1927,11 @@ export class Client extends GameShell {
                 }
             }
         } else {
-            for (let i: number = 0; i < 256; i++) {
-                this.flameGradient[i] = this.flameGradient0[i];
-            }
+            this.flameGradient.set(this.flameGradient0);
         }
 
-        for (let i: number = 0; i < 33920; i++) {
-            if (this.imageTitle0 && this.imageFlamesLeft) this.imageTitle0.data[i] = this.imageFlamesLeft.data[i];
+        if (this.imageTitle0 && this.imageFlamesLeft) {
+            this.imageTitle0.data.set(this.imageFlamesLeft.data.subarray(0, 33920));
         }
 
         let srcOffset: number = 0;
@@ -1952,10 +1967,8 @@ export class Client extends GameShell {
 
         this.imageTitle0?.draw(0, 0);
 
-        for (let i: number = 0; i < 33920; i++) {
-            if (this.imageTitle1 && this.imageFlamesRight) {
-                this.imageTitle1.data[i] = this.imageFlamesRight.data[i];
-            }
+        if (this.imageTitle1 && this.imageFlamesRight) {
+            this.imageTitle1.data.set(this.imageFlamesRight.data.subarray(0, 33920));
         }
 
         srcOffset = 0;
@@ -2795,13 +2808,15 @@ export class Client extends GameShell {
         this.minimapState = 0;
         this.minimapFlagX = 0;
 
-        this.stream?.close();
+        const oldStream = this.stream;
 
         this.ingame = false;
         await this.login(this.loginUser, this.loginPass, true);
         if (!this.ingame) {
             await this.logout();
         }
+
+        oldStream?.close();
     }
 
     // todo: order

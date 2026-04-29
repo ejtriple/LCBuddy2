@@ -21,7 +21,7 @@ export default class JagFile {
     fileUnpacked: Uint8Array[] = [];
 
     constructor(src: Uint8Array) {
-        let data: Packet = new Packet(new Uint8Array(src));
+        let data: Packet = new Packet(src);
         const unpackedSize: number = data.g3();
         const packedSize: number = data.g3();
 
@@ -30,7 +30,7 @@ export default class JagFile {
             this.unpacked = false;
         } else {
             this.data = bunzip2(src.subarray(6));
-            data = new Packet(new Uint8Array(this.data));
+            data = new Packet(this.data);
             this.unpacked = true;
         }
 
@@ -70,7 +70,7 @@ export default class JagFile {
 
         const offset: number = this.fileOffset[index];
         const length: number = this.filePackedSize[index];
-        const src: Uint8Array = new Uint8Array(this.data.subarray(offset, offset + length));
+        const src: Uint8Array = this.data.subarray(offset, offset + length);
         if (this.unpacked) {
             this.fileUnpacked[index] = src;
             return src;
