@@ -701,7 +701,7 @@ export class Client extends GameShell {
 
         while (this.jagChecksum[8] === 0) {
             let error = 'Unknown problem';
-            await this.messageBox('Connecting to web server', 10);
+            await this.drawProgress('Connecting to web server', 10);
 
             try {
                 const checksums: Packet = new Packet(await downloadUrl('/crc'));
@@ -729,10 +729,10 @@ export class Client extends GameShell {
 
                 for (let remaining = wait; remaining > 0; remaining--) {
                     if (retries >= 10) {
-                        await this.messageBox('Game updated - please reload page', 10);
+                        await this.drawProgress('Game updated - please reload page', 10);
                         remaining = 10;
                     } else {
-                        await this.messageBox(`${error} - Will retry in ${remaining} secs.`, 10);
+                        await this.drawProgress(`${error} - Will retry in ${remaining} secs.`, 10);
                     }
 
                     await sleep(1000);
@@ -772,7 +772,7 @@ export class Client extends GameShell {
 
         let loops = 0;
         while (!data) {
-            await this.messageBox(`Requesting ${displayName}`, progress);
+            await this.drawProgress(`Requesting ${displayName}`, progress);
 
             try {
                 data = await downloadUrl(`/${filename}${crc}`);
@@ -797,10 +797,10 @@ export class Client extends GameShell {
             if (!data) {
                 for (let i: number = retry; i > 0; i--) {
                     if (loops >= 3) {
-                        await this.messageBox('Game updated - please reload page', progress);
+                        await this.drawProgress('Game updated - please reload page', progress);
                         i = 10;
                     } else {
-                        await this.messageBox(`Error loading - Will retry in ${i} secs.`, progress);
+                        await this.drawProgress(`Error loading - Will retry in ${i} secs.`, progress);
                     }
 
                     await sleep(1000);
@@ -871,7 +871,7 @@ export class Client extends GameShell {
 
             const versionlist: JagFile = await this.getJagFile('update list', 60, 'versionlist', 5);
 
-            await this.messageBox('Connecting to update server', 60);
+            await this.drawProgress('Connecting to update server', 60);
 
             this.onDemand = new OnDemand(versionlist, this);
             AnimFrame.init(this.onDemand.getAnimFrameCount());
@@ -888,7 +888,7 @@ export class Client extends GameShell {
                 }
             }
 
-            await this.messageBox('Requesting animations', 65);
+            await this.drawProgress('Requesting animations', 65);
 
             const animCount = this.onDemand.getFileCount(1);
             for (let i = 0; i < animCount; i++) {
@@ -898,14 +898,14 @@ export class Client extends GameShell {
             while (this.onDemand.remaining() > 0) {
                 const progress = animCount - this.onDemand.remaining();
                 if (progress > 0) {
-                    await this.messageBox('Loading animations - ' + (((progress * 100) / animCount) | 0) + '%', 65);
+                    await this.drawProgress('Loading animations - ' + (((progress * 100) / animCount) | 0) + '%', 65);
                 }
 
                 await this.onDemandLoop();
                 await sleep(100);
             }
 
-            await this.messageBox('Requesting models', 70);
+            await this.drawProgress('Requesting models', 70);
 
             const modelCount = this.onDemand.getFileCount(0);
             for (let i = 0; i < modelCount; i++) {
@@ -919,7 +919,7 @@ export class Client extends GameShell {
             while (this.onDemand.remaining() > 0) {
                 const progress = modelPrefetch - this.onDemand.remaining();
                 if (progress > 0) {
-                    await this.messageBox('Loading models - ' + (((progress * 100) / modelPrefetch) | 0) + '%', 70);
+                    await this.drawProgress('Loading models - ' + (((progress * 100) / modelPrefetch) | 0) + '%', 70);
                 }
 
                 await this.onDemandLoop();
@@ -927,7 +927,7 @@ export class Client extends GameShell {
             }
 
             if (this.db) {
-                await this.messageBox('Requesting maps', 75);
+                await this.drawProgress('Requesting maps', 75);
 
                 this.onDemand.request(3, this.onDemand.getMapFile(48, 47, 0));
                 this.onDemand.request(3, this.onDemand.getMapFile(48, 47, 1));
@@ -951,7 +951,7 @@ export class Client extends GameShell {
                 while (this.onDemand.remaining() > 0) {
                     const progress = mapPrefetch - this.onDemand.remaining();
                     if (progress > 0) {
-                        await this.messageBox('Loading maps - ' + (((progress * 100) / mapPrefetch) | 0) + '%', 75);
+                        await this.drawProgress('Loading maps - ' + (((progress * 100) / mapPrefetch) | 0) + '%', 75);
                     }
 
                     await this.onDemandLoop();
@@ -1000,7 +1000,7 @@ export class Client extends GameShell {
                 }
             }
 
-            await this.messageBox('Unpacking media', 80);
+            await this.drawProgress('Unpacking media', 80);
 
             this.invback = Pix8.depack(media, 'invback', 0);
             this.chatback = Pix8.depack(media, 'chatback', 0);
@@ -1148,13 +1148,13 @@ export class Client extends GameShell {
                 }
             }
 
-            await this.messageBox('Unpacking textures', 83);
+            await this.drawProgress('Unpacking textures', 83);
 
             Pix3D.unpackTextures(textures);
             Pix3D.initColourTable(0.8);
             Pix3D.initPool(20);
 
-            await this.messageBox('Unpacking config', 86);
+            await this.drawProgress('Unpacking config', 86);
 
             SeqType.init(config);
             LocType.init(config);
@@ -1167,16 +1167,16 @@ export class Client extends GameShell {
             VarBitType.init(config);
 
             if (!Client.lowMem) {
-                await this.messageBox('Unpacking sounds', 90);
+                await this.drawProgress('Unpacking sounds', 90);
                 const soundsDat = sounds.read('sounds.dat');
                 JagFX.init(new Packet(soundsDat));
             }
 
-            await this.messageBox('Unpacking interfaces', 95);
+            await this.drawProgress('Unpacking interfaces', 95);
 
             IfType.init(interfaces, media, [this.p11, this.p12, this.b12, this.q8]);
 
-            await this.messageBox('Preparing game engine', 100);
+            await this.drawProgress('Preparing game engine', 100);
 
             for (let y: number = 0; y < 33; y++) {
                 let left: number = 999;
@@ -1268,7 +1268,7 @@ export class Client extends GameShell {
         await this.onDemandLoop();
     }
 
-    override async maindraw() {
+    override async mainredraw() {
         if (this.errorStarted || this.errorLoading || this.errorHost) {
             this.drawError();
             return;
@@ -1293,7 +1293,7 @@ export class Client extends GameShell {
         this.redrawFrame = true;
     }
 
-    protected override unload(): void {
+    protected override mainquit(): void {
         this.stream?.close();
         this.stream = null;
 
@@ -1760,7 +1760,7 @@ export class Client extends GameShell {
         this.flameBuffer3 = new Int32Array(32768);
         this.flameBuffer2 = new Int32Array(32768);
 
-        this.messageBox('Connecting to fileserver', 10).then((): void => {
+        this.drawProgress('Connecting to fileserver', 10).then((): void => {
             if (!this.flameActive) {
                 this.flameActive = true;
                 this.flamesInterval = setInterval(this.renderFlames.bind(this), 35);
@@ -4131,7 +4131,7 @@ export class Client extends GameShell {
         }
     }
 
-    override async messageBox(message: string, progress: number): Promise<void> {
+    override async drawProgress(message: string, progress: number): Promise<void> {
         console.log(`${progress}%: ${message}`);
 
         this.lastProgressPercent = progress;
@@ -4140,7 +4140,7 @@ export class Client extends GameShell {
         await this.prepareTitle();
 
         if (!this.title) {
-            await super.messageBox(message, progress);
+            await super.drawProgress(message, progress);
             return;
         }
 

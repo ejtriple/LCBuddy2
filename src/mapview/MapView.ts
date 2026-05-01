@@ -194,7 +194,7 @@ export class MapView extends GameShell {
 
         const worldmap: JagFile = await this.loadWorldmap();
 
-        await this.messageBox('Please wait... Rendering Map', 100);
+        await this.drawProgress('Please wait... Rendering Map', 100);
 
         // const size: Packet = new Packet(worldmap.read('size.dat'));
         // this.mapOriginX = size.g2();
@@ -317,7 +317,7 @@ export class MapView extends GameShell {
         this.drawArea?.setPixels();
     }
 
-    override async maindraw(): Promise<void> {
+    override async mainredraw(): Promise<void> {
         if (this.redraw) {
             this.redraw = false;
             this.redrawTimer = 0;
@@ -688,14 +688,14 @@ export class MapView extends GameShell {
 
         let retry: number = 5;
         while (!data) {
-            await this.messageBox('Requesting map', 0);
+            await this.drawProgress('Requesting map', 0);
 
             try {
                 data = await downloadUrl('/worldmap.jag');
             } catch (_e) {
                 data = undefined;
                 for (let i: number = retry; i > 0; i--) {
-                    await this.messageBox(`Error loading - Will retry in ${i} secs.`, 0);
+                    await this.drawProgress(`Error loading - Will retry in ${i} secs.`, 0);
                     await sleep(1000);
                 }
 

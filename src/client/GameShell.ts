@@ -48,9 +48,9 @@ export default abstract class GameShell {
     };
 
     protected async maininit() { }
-    protected unload() { }
+    protected mainquit() { }
     protected async mainloop() { }
-    protected async maindraw() { }
+    protected async mainredraw() { }
     protected refresh() { }
 
     constructor(resizetoFit: boolean = false) {
@@ -120,7 +120,7 @@ export default abstract class GameShell {
             e.preventDefault();
         };
 
-        await this.messageBox('Loading...', 0);
+        await this.drawProgress('Loading...', 0);
         await this.maininit();
 
         let ntime: number = 0;
@@ -201,7 +201,7 @@ export default abstract class GameShell {
                 this.fps = ((ratio * 1000) / (this.deltime * 256)) | 0;
             }
 
-            await this.maindraw();
+            await this.mainredraw();
 
             // this is custom for targeting specific fps (on mobile).
             if (this.tfps < 50) {
@@ -231,7 +231,7 @@ export default abstract class GameShell {
 
     protected shutdown() {
         this.state = -2;
-        this.unload();
+        this.mainquit();
 
         window.removeEventListener('resize', this.resizeHandler, false);
         canvas.onfocus = null;
@@ -272,7 +272,7 @@ export default abstract class GameShell {
         }
     }
 
-    protected async messageBox(message: string, progress: number): Promise<void> {
+    protected async drawProgress(message: string, progress: number): Promise<void> {
         const width: number = this.sWid;
         const height: number = this.sHei;
 
