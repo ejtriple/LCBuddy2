@@ -12128,15 +12128,6 @@ export class Client extends GameShell {
         }
     }
 
-    // all mouse logic is done above, this is for controlling canvas behaviors
-    override touchStart(e: TouchEvent) {
-        if (e.touches.length < 2 || this.dragging) {
-            // 1 touch - prevent natural browser behavior
-            // 2+ touches - allow scrolling/zooming
-            e.preventDefault();
-        }
-    }
-
     private exceedsGrabThreshold(size: number) {
         return Math.abs(this.sx - this.nx) > size || Math.abs(this.sy - this.ny) > size;
     }

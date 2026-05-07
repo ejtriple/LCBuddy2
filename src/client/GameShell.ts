@@ -101,13 +101,7 @@ export default abstract class GameShell {
         window.onmousemove = this.windowMouseMove.bind(this);
 
         if (this.isTouchDevice) {
-            if (this.hasTouchEvents) {
-                canvas.ontouchstart = this.ontouchstart.bind(this);
-            } else {
-                // edge case: we can't control canvas touch action behavior to allow zooming
-                // device has a touch screen but browser does not expose touchstart
-                canvas.style.touchAction = 'none';
-            }
+            canvas.style.touchAction = 'pinch-zoom';
         }
 
         // Preventing mouse events from bubbling up to the context menu in the browser for our canvas.
@@ -245,7 +239,6 @@ export default abstract class GameShell {
         canvas.onpointerenter = null;
         canvas.onpointerleave = null;
         canvas.onpointermove = null;
-        canvas.ontouchstart = null;
         canvas.oncontextmenu = null;
         window.onmouseup = null;
         window.onmousemove = null;
@@ -422,18 +415,6 @@ export default abstract class GameShell {
     }
 
     protected windowMouseMove(e: MouseEvent) {
-    }
-
-    private ontouchstart(e: TouchEvent) {
-        this.touchStart(e);
-    }
-
-    protected touchStart(e: TouchEvent) {
-        if (e.touches.length < 2) {
-            // 1 touch - prevent natural browser behavior
-            // 2+ touches - allow scrolling/zooming
-            e.preventDefault();
-        }
     }
 
     private onkeydown(e: KeyboardEvent) {
