@@ -47,6 +47,10 @@ export default abstract class GameShell {
         }
     };
 
+    private readonly touchEndHandler = (e: TouchEvent): void => {
+        e.preventDefault();
+    };
+
     protected async maininit() { }
     protected mainquit() { }
     protected async mainloop() { }
@@ -102,6 +106,7 @@ export default abstract class GameShell {
 
         if (this.isTouchDevice) {
             canvas.style.touchAction = 'pinch-zoom';
+            canvas.addEventListener('touchend', this.touchEndHandler, { passive: false });
         }
 
         // Preventing mouse events from bubbling up to the context menu in the browser for our canvas.
@@ -239,6 +244,7 @@ export default abstract class GameShell {
         canvas.onpointerenter = null;
         canvas.onpointerleave = null;
         canvas.onpointermove = null;
+        canvas.removeEventListener('touchend', this.touchEndHandler);
         canvas.oncontextmenu = null;
         window.onmouseup = null;
         window.onmousemove = null;
