@@ -3097,37 +3097,48 @@ export class Client extends GameShell {
                                 if (this.chatInput.startsWith('yellow:')) {
                                     colour = 0;
                                     this.chatInput = this.chatInput.substring(7);
-                                } else if (this.chatInput.startsWith('red:')) {
+                                }
+                                if (this.chatInput.startsWith('red:')) {
                                     colour = 1;
                                     this.chatInput = this.chatInput.substring(4);
-                                } else if (this.chatInput.startsWith('green:')) {
+                                }
+                                if (this.chatInput.startsWith('green:')) {
                                     colour = 2;
                                     this.chatInput = this.chatInput.substring(6);
-                                } else if (this.chatInput.startsWith('cyan:')) {
+                                }
+                                if (this.chatInput.startsWith('cyan:')) {
                                     colour = 3;
                                     this.chatInput = this.chatInput.substring(5);
-                                } else if (this.chatInput.startsWith('purple:')) {
+                                }
+                                if (this.chatInput.startsWith('purple:')) {
                                     colour = 4;
                                     this.chatInput = this.chatInput.substring(7);
-                                } else if (this.chatInput.startsWith('white:')) {
+                                }
+                                if (this.chatInput.startsWith('white:')) {
                                     colour = 5;
                                     this.chatInput = this.chatInput.substring(6);
-                                } else if (this.chatInput.startsWith('flash1:')) {
+                                }
+                                if (this.chatInput.startsWith('flash1:')) {
                                     colour = 6;
                                     this.chatInput = this.chatInput.substring(7);
-                                } else if (this.chatInput.startsWith('flash2:')) {
+                                }
+                                if (this.chatInput.startsWith('flash2:')) {
                                     colour = 7;
                                     this.chatInput = this.chatInput.substring(7);
-                                } else if (this.chatInput.startsWith('flash3:')) {
+                                }
+                                if (this.chatInput.startsWith('flash3:')) {
                                     colour = 8;
                                     this.chatInput = this.chatInput.substring(7);
-                                } else if (this.chatInput.startsWith('glow1:')) {
+                                }
+                                if (this.chatInput.startsWith('glow1:')) {
                                     colour = 9;
                                     this.chatInput = this.chatInput.substring(6);
-                                } else if (this.chatInput.startsWith('glow2:')) {
+                                }
+                                if (this.chatInput.startsWith('glow2:')) {
                                     colour = 10;
                                     this.chatInput = this.chatInput.substring(6);
-                                } else if (this.chatInput.startsWith('glow3:')) {
+                                }
+                                if (this.chatInput.startsWith('glow3:')) {
                                     colour = 11;
                                     this.chatInput = this.chatInput.substring(6);
                                 }
