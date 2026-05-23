@@ -517,7 +517,7 @@ export class Client extends GameShell {
     private midiSong: number = -1;
     private nextMidiSong: number = -1;
     private nextMusicDelay: number = 0;
-    private midiFading: boolean = false;
+    private midiFading: boolean = true;
 
     private waveEnabled: boolean = true;
     private waveVolume: number = 0;
@@ -3440,7 +3440,7 @@ export class Client extends GameShell {
 
             if (this.nextMusicDelay === 0 && this.midiActive && !Client.lowMem) {
                 this.midiSong = this.nextMidiSong;
-                this.midiFading = false;
+                this.midiFading = true;
                 this.onDemand?.request(2, this.midiSong);
             }
         }
@@ -10633,7 +10633,7 @@ export class Client extends GameShell {
             if (this.midiActive !== lastMidiActive) {
                 if (this.midiActive) {
                     this.midiSong = this.nextMidiSong;
-                    this.midiFading = false;
+                    this.midiFading = true;
                     this.onDemand?.request(2, this.midiSong);
                 } else {
                     stopMidi(false);
