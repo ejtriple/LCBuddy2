@@ -562,11 +562,13 @@ export class Client extends GameShell {
     private idkDesignColour: Int32Array = new Int32Array(5);
     private idkDesignButton1: Pix32 | null = null;
     private idkDesignButton2: Pix32 | null = null;
+    private readonly searchParams: URLSearchParams;
 
     // ----
 
     constructor(nodeid: number, lowmem: boolean, members: boolean) {
         super();
+        this.searchParams = new URLSearchParams(window.location.search);
 
         if (typeof nodeid === 'undefined' || typeof lowmem === 'undefined' || typeof members === 'undefined') {
             return;
@@ -602,6 +604,16 @@ export class Client extends GameShell {
 
     saveMidi(data: Uint8Array, fading: boolean) {
         playMidi(data, this.midiVolume, fading);
+    }
+
+    private getIntParam(name: string, fallback: number = 0): number {
+        const value: string | null = this.searchParams.get(name);
+        if (value === null || !/^[+-]?\d+$/.test(value)) {
+            return fallback;
+        }
+
+        const parsed: number = Number(value);
+        return Number.isSafeInteger(parsed) ? parsed : fallback;
     }
 
     private drawError(): void {
@@ -865,7 +877,8 @@ export class Client extends GameShell {
 
             if (!Client.lowMem) {
                 this.midiSong = 0; // scape_main
-                this.midiFading = false;
+                this.midiSong = this.getIntParam('music', this.midiSong);
+                this.midiFading = true;
                 this.onDemand.request(2, this.midiSong);
 
                 while (this.onDemand.remaining() > 0) {
@@ -1688,8 +1701,10 @@ export class Client extends GameShell {
 
         this.imageTitlebox = Pix8.depack(this.title, 'titlebox');
         this.imageTitlebutton = Pix8.depack(this.title, 'titlebutton');
+
+        const flameIcon: number = this.getIntParam('fl_icon');
         for (let i: number = 0; i < 12; i++) {
-            this.imageRunes[i] = Pix8.depack(this.title, 'runes', i);
+            this.imageRunes[i] = Pix8.depack(this.title, 'runes', flameIcon === 0 ? i : (i & 0x3) + 12);
         }
 
         this.drawProgress('Connecting to fileserver', 10).then((): void => {
