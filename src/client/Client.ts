@@ -4216,7 +4216,7 @@ export class Client extends GameShell {
         Model.mouseY = this.mouseY - 4;
 
         Pix2D.cls();
-        this.world?.renderAll(this.camX, this.camY, this.camZ, level, this.camYaw, this.camPitch, Client.loopCycle);
+        this.world?.renderAll(this.camX, this.camY, this.camZ, level, this.camYaw, this.camPitch);
         this.world?.removeSprites();
         this.entityOverlays();
         this.coordArrow();
@@ -5182,7 +5182,7 @@ export class Client extends GameShell {
                     if (data) {
                         const x: number = (this.mapBuildIndex[i] >> 8) * 64 - this.mapBuildBaseX;
                         const z: number = (this.mapBuildIndex[i] & 0xff) * 64 - this.mapBuildBaseZ;
-                        build.loadLocations(data, x, z, Client.loopCycle, this.world, this.collision);
+                        build.loadLocations(data, x, z, this.world, this.collision);
                     }
                 }
             }
@@ -7170,16 +7170,16 @@ export class Client extends GameShell {
                     if (wall) {
                         const locId = (wall.typecode >> 14) & 0x7fff;
                         if (shape == 2) {
-                            wall.model1 = new ClientLocAnim(Client.loopCycle, locId, 2, rotate + 4, heightSW, heightSE, heightNE, heightNW, seq, false);
-                            wall.model2 = new ClientLocAnim(Client.loopCycle, locId, 2, (rotate + 1) & 0x3, heightSW, heightSE, heightNE, heightNW, seq, false);
+                            wall.model1 = new ClientLocAnim(locId, 2, rotate + 4, heightSW, heightSE, heightNE, heightNW, seq, false);
+                            wall.model2 = new ClientLocAnim(locId, 2, (rotate + 1) & 0x3, heightSW, heightSE, heightNE, heightNW, seq, false);
                         } else {
-                            wall.model1 = new ClientLocAnim(Client.loopCycle, locId, shape, rotate, heightSW, heightSE, heightNE, heightNW, seq, false);
+                            wall.model1 = new ClientLocAnim(locId, shape, rotate, heightSW, heightSE, heightNE, heightNW, seq, false);
                         }
                     }
                 } else if (layer == 1) {
                     const decor = this.world.getDecor(this.minusedlevel, z, x);
                     if (decor) {
-                        decor.model = new ClientLocAnim(Client.loopCycle, (decor.typecode >> 14) & 0x7fff, 4, 0, heightSW, heightNE, heightNE, heightNW, seq, false);
+                        decor.model = new ClientLocAnim((decor.typecode >> 14) & 0x7fff, 4, 0, heightSW, heightNE, heightNE, heightNW, seq, false);
                     }
                 } else if (layer == 2) {
                     const sprite = this.world.getScene(this.minusedlevel, x, z);
@@ -7188,12 +7188,12 @@ export class Client extends GameShell {
                     }
 
                     if (sprite) {
-                        sprite.model = new ClientLocAnim(Client.loopCycle, (sprite.typecode >> 14) & 0x7fff, shape, rotate, heightSW, heightSE, heightNE, heightNW, seq, false);
+                        sprite.model = new ClientLocAnim((sprite.typecode >> 14) & 0x7fff, shape, rotate, heightSW, heightSE, heightNE, heightNW, seq, false);
                     }
                 } else if (layer == 3) {
                     const decor = this.world.getGd(this.minusedlevel, x, z);
                     if (decor) {
-                        decor.model = new ClientLocAnim(Client.loopCycle, (decor.typecode >> 14) & 0x7fff, 22, rotate, heightSW, heightSE, heightNE, heightNW, seq, false);
+                        decor.model = new ClientLocAnim((decor.typecode >> 14) & 0x7fff, 22, rotate, heightSW, heightSE, heightNE, heightNW, seq, false);
                     }
                 }
             }
@@ -7535,7 +7535,7 @@ export class Client extends GameShell {
             }
 
             if (this.groundh) {
-                ClientBuild.changeLocUnchecked(level, x, z, id, shape, angle, Client.loopCycle, tileLevel, this.groundh, this.world, this.collision[level]);
+                ClientBuild.changeLocUnchecked(level, x, z, id, shape, angle, tileLevel, this.groundh, this.world, this.collision[level]);
             }
         }
     }
