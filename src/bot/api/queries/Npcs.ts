@@ -1,22 +1,22 @@
-import { reader, type NpcSnapshot } from '../../adapter/ClientAdapter.js';
+import { reader } from '../../adapter/ClientAdapter.js';
+import { Npc } from '../entities/index.js';
+import EntityQuery from './Query.js';
 
-/**
- * NPC reads (Slice 2: snapshots; the RuneMate-style query builder with
- * .name()/.within()/.reachable() lands in Slice 3).
- */
 export const Npcs = {
-    /** Snapshot of every NPC in the scene, unordered. */
-    all(): NpcSnapshot[] {
-        return reader.npcs();
+    query(): EntityQuery<Npc> {
+        return new EntityQuery(() => reader.npcs().map(s => new Npc(s)));
     },
 
-    /** The `count` nearest NPCs by tile distance, nearest first. */
-    nearest(count: number = 1): NpcSnapshot[] {
-        return reader
-            .npcs()
-            .sort((a, b) => a.distance - b.distance)
+    all(): Npc[] {
+        return reader.npcs().map(s => new Npc(s));
+    },
+
+    /** The `count` nearest NPCs, nearest first. */
+    nearest(count: number = 1): Npc[] {
+        return Npcs.all()
+            .sort((a, b) => a.distance() - b.distance())
             .slice(0, count);
     }
 };
 
-export type { NpcSnapshot };
+export { Npc };

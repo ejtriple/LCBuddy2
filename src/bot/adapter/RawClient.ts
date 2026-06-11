@@ -1,5 +1,8 @@
 import type ClientNpc from '#/dash3d/ClientNpc.js';
+import type ClientObj from '#/dash3d/ClientObj.js';
 import type ClientPlayer from '#/dash3d/ClientPlayer.js';
+import type World from '#/dash3d/World.js';
+import type LinkList from '#/datastruct/LinkList.js';
 
 /**
  * Structural type of every Client internal the bot touches, verified against
@@ -58,6 +61,22 @@ export interface RawClient {
     mainModalId: number;
     sideModalId: number;
 
+    // scene (loc + ground item enumeration)
+    world: World | null;
+    groundObj: (LinkList<ClientObj> | null)[][][];
+
+    // sidebar tabs (sideIcon[3] = backpack interface id)
+    sideIcon: number[];
+
+    // dialog state
+    resumedPauseButton: boolean;
+
+    // interaction primitives (Slice 3): doAction dispatches a menu slot to
+    // the byte-identical OP packet a human click produces; tryMove runs the
+    // local BFS and writes MOVE_GAMECLICK(0)/MINIMAPCLICK(1)/OPCLICK(2)
+    doAction(optionId: number): void;
+    tryMove(srcX: number, srcZ: number, dx: number, dz: number, tryNearest: boolean, locWidth: number, locLength: number, locAngle: number, locShape: number, forceapproach: number, type: number): boolean;
+
     // packet pump (H4): tcpIn processes ONE packet per `true` return and
     // records its opcode in ptype0 just before dispatch (Client.ts ~5923)
     ptype0: number;
@@ -101,6 +120,12 @@ export const SELF_TEST = [
     'chatModalId',
     'mainModalId',
     'sideModalId',
+    'world',
+    'groundObj',
+    'sideIcon',
+    'resumedPauseButton',
+    'doAction',
+    'tryMove',
     'ptype0',
     'tcpIn'
 ] as const satisfies readonly (keyof RawClient)[];

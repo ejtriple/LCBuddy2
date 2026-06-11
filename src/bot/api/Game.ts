@@ -20,6 +20,11 @@ export const Game = {
         return reader.weight();
     },
 
+    /** Local player in combat (health bar showing). */
+    inCombat(): boolean {
+        return reader.inCombat();
+    },
+
     /** Server ticks observed since the client booted (~600ms each). */
     tick(): number {
         return BotHost.tickCount;
