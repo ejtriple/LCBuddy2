@@ -16,7 +16,8 @@ the complete set of touch points. If an upstream merge breaks the bot, the break
 | H6 | new file | `public-bot/bot.html` — replicates the `client.ejs` DOM contract: `<canvas id="canvas" width="765" height="503">` must exist at module load | `client.ejs` adds DOM the client reads at load (compare on merge) |
 | H7 | new file | `bot.bundle.ts` — entry `src/bot/main.ts`, **no terser property mangling**, console kept | `bundle.ts` changes its `define` map or output layout (keep in sync) |
 | H8 | config edit | `eslint.config.ts`: appended `src/bot/` import/DOM fence blocks (marked) | trivial conflicts only |
-| H9 | config edit | `package.json`: added `build:bot` / `build:bot:dev` scripts | trivial conflicts only |
+| H9 | config edit | `package.json`: added `build:bot` / `build:bot:dev` scripts + `playwright-core` devDep | trivial conflicts only |
+| H10 | doc replace | `README.md` rewritten as LCBuddy2's front door | trivial conflicts only (take ours, fold upstream notes in) |
 
 Every name the adapter reads is declared in `src/bot/adapter/RawClient.ts` and checked at runtime
 by the **self-test** (`ClientAdapter.attach()` returns missing names; the panel shows a red banner).
