@@ -39,6 +39,27 @@ cp out/client.js out/client.js.map out/ondemandworker.js out/ondemandworker.js.m
 
 `bun run build:dev` skips minification and keeps console.
 
+## Bot client
+
+```sh
+./tools/deploy-local.sh     # builds stock + bot, copies into $ENGINE_DIR (default ~/code/lostcity-dev/engine)
+```
+
+Then browse `http://localhost:8888/bot.html` (`?nodeid=10&lowmem=0&members=1` to override connection
+args). The DevTools handle `lcbuddy` exposes `{ client, host }` — possible because the bot bundle
+never mangles property names.
+
+## E2E smoke test (Slice 1 exit criterion)
+
+```sh
+bun tools/e2e-smoke.ts [base-url] [username] [password]
+```
+
+Boots `bot.html` in headless Chrome (system install, via playwright-core), logs in through the
+client's own `login()`, and asserts the panel mirrors live state: green adapter banner, world
+tile, energy, stats, chat, and an advancing tick counter. Defaults to a unique per-run username —
+re-logging the same account within a few seconds of disconnect gets rejected as already-online.
+
 ## Login probe (headless smoke test)
 
 ```sh

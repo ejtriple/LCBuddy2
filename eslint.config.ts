@@ -30,5 +30,35 @@ export default defineConfig([
                 }
             ]
         }
+    },
+
+    // ---- LCBuddy2 fences (H8, see HOOKS.md) ----
+    // Only adapter/ may name client internals; everything else in src/bot/
+    // imports the adapter. Protocol const-enums are exempt (inlined, no
+    // runtime coupling).
+    {
+        files: ['src/bot/**/*.ts'],
+        ignores: ['src/bot/adapter/**', 'src/bot/BotClient.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['#/client/*', '#/io/*', '#/config/*', '#/dash3d/*', '#/datastruct/*', '#/graphics/*', '#/sound/*', '#/wordfilter/*', '#3rdparty/*', '!#/io/ServerProt.js', '!#/io/ClientProt.js'],
+                            message: 'Only src/bot/adapter/ may touch client internals (see HOOKS.md).'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    // Only ui/ and the entrypoints may touch the DOM (keeps headless viable).
+    {
+        files: ['src/bot/**/*.ts'],
+        ignores: ['src/bot/ui/**', 'src/bot/main.ts'],
+        rules: {
+            'no-restricted-globals': ['error', { name: 'document', message: 'DOM only in src/bot/ui/ and main.ts (see HOOKS.md).' }, { name: 'window', message: 'DOM only in src/bot/ui/ and main.ts (see HOOKS.md).' }]
+        }
     }
 ]);

@@ -8,7 +8,9 @@
     },
     "scripts": {
         "build": "bun run bundle.ts",
-        "build:dev": "bun run bundle.ts dev"
+        "build:dev": "bun run bundle.ts dev",
+        "build:bot": "bun run bot.bundle.ts",
+        "build:bot:dev": "bun run bot.bundle.ts dev"
     },
     "dependencies": {
         "fflate": "^0.8.2"
@@ -21,6 +23,7 @@
         "globals": "^17.0.0",
         "jiti": "^2.6.1",
         "node-forge": "^1.3.2",
+        "playwright-core": "^1.60.0",
         "prettier": "^3.7.1",
         "terser": "^5.46.0",
         "typescript-eslint": "^8.53.0"

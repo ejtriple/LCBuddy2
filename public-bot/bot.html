@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>LCBuddy2</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.7">
+
+    <style>
+        body,
+        td,
+        p {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            color: white;
+        }
+
+        body {
+            margin: 0;
+            overflow: auto;
+            background-color: black;
+        }
+
+        #lcb-root {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        #game-wrap {
+            position: relative;
+            width: 765px;
+            height: 503px;
+            flex: none;
+        }
+
+        #game-wrap canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 765px;
+            height: 503px;
+            display: block;
+            user-select: none;
+            outline: none;
+            -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+            image-rendering: pixelated;
+        }
+
+        #overlay {
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* ---- bot panel ---- */
+
+        #bot-panel {
+            width: 330px;
+            flex: none;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: ui-monospace, Menlo, Consolas, monospace;
+            font-size: 12px;
+            color: #ddd;
+        }
+
+        .lcb-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #04A800;
+            margin-bottom: 8px;
+        }
+
+        .lcb-banner {
+            padding: 4px 6px;
+            border-radius: 3px;
+            margin-bottom: 8px;
+            font-size: 11px;
+        }
+
+        .lcb-banner-ok {
+            background: #07330a;
+            color: #5be05b;
+        }
+
+        .lcb-banner-warn {
+            background: #333007;
+            color: #e0d75b;
+        }
+
+        .lcb-banner-error {
+            background: #3a0a0a;
+            color: #ff7b7b;
+        }
+
+        .lcb-section {
+            margin-bottom: 10px;
+        }
+
+        .lcb-section-title {
+            color: #888;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #2a2a2a;
+            margin-bottom: 4px;
+            padding-bottom: 2px;
+        }
+
+        .lcb-row {
+            display: flex;
+            justify-content: space-between;
+            line-height: 1.6;
+        }
+
+        .lcb-key {
+            color: #777;
+        }
+
+        .lcb-value {
+            color: #ddd;
+            text-align: right;
+        }
+
+        .lcb-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px 8px;
+        }
+
+        .lcb-stat {
+            display: flex;
+            justify-content: space-between;
+            line-height: 1.5;
+        }
+
+        .lcb-stat-name {
+            color: #777;
+            text-transform: capitalize;
+        }
+
+        .lcb-chat-line {
+            line-height: 1.5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lcb-dim {
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="lcb-root">
+        <div id="game-wrap">
+            <canvas id="canvas" width="765" height="503">
+                Your browser is not capable of running our web client.
+            </canvas>
+            <canvas id="overlay" width="765" height="503"></canvas>
+        </div>
+        <div id="bot-panel"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading...', canvas.width / 2, canvas.height / 2);
+        }
+    </script>
+
+    <script type="module" src="./bot/botclient.js"></script>
+</body>
+
+</html>
