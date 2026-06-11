@@ -2,6 +2,7 @@ import { ScriptRegistry } from '../runtime/ScriptRegistry.js';
 import ChickenKiller from './ChickenKiller.js';
 import CrashTestBot from './CrashTestBot.js';
 import DebugBot from './DebugBot.js';
+import Woodcutter from './Woodcutter.js';
 
 ScriptRegistry.register({
     name: 'DebugBot',
@@ -13,6 +14,12 @@ ScriptRegistry.register({
     name: 'ChickenKiller',
     description: 'Kills chickens, loots and buries bones (anchor = start tile)',
     create: () => new ChickenKiller()
+});
+
+ScriptRegistry.register({
+    name: 'Woodcutter',
+    description: 'Chops trees and drops logs (anchor = start tile, needs an axe)',
+    create: () => new Woodcutter()
 });
 
 ScriptRegistry.register({

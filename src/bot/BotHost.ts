@@ -1,6 +1,7 @@
 import { ServerProt } from '#/io/ServerProt.js';
 
 import { attach as adapterAttach, setPacketListener } from './adapter/ClientAdapter.js';
+import { pumpProducers } from './events/producers.js';
 
 type FrameListener = () => void;
 type TickListener = (tick: number) => void;
@@ -58,6 +59,14 @@ class BotHostImpl {
     // ---- hook entry points (called from BotClient overrides) ----
 
     onFrame(): void {
+        // event producers diff state first so frame listeners (including the
+        // scheduler pump) observe this frame's events
+        try {
+            pumpProducers(this.tickCount);
+        } catch (err) {
+            console.error('[lcbuddy] producer error', err);
+        }
+
         this.fire(this.frameListeners);
     }
 

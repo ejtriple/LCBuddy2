@@ -356,45 +356,60 @@ export const reader = {
 
     /** Inventory (backpack) contents, resolved from the live TYPE_INV component. */
     inventory(): InvItemSnapshot[] {
-        const out: InvItemSnapshot[] = [];
-        const comId = findInvComponent();
-        if (comId === -1) {
-            return out;
-        }
-
-        const com = IfType.list[comId];
-        if (!com.linkObjType || !com.linkObjNumber) {
-            return out;
-        }
-
-        for (let slot = 0; slot < com.linkObjType.length; slot++) {
-            const idPlusOne = com.linkObjType[slot];
-            if (idPlusOne <= 0) {
-                continue;
-            }
-
-            const id = idPlusOne - 1;
-            const type = ObjType.list(id);
-            out.push({
-                slot,
-                id,
-                name: type.name,
-                count: com.linkObjNumber[slot],
-                ops: heldOps(type.iop),
-                comId
-            });
-        }
-
-        return out;
+        return readInvComponent(findTabInvComponent(3), type => heldOps(type.iop));
     },
 
     inventorySize(): number {
-        const comId = findInvComponent();
+        const comId = findTabInvComponent(3);
         if (comId === -1) {
             return 0;
         }
 
         return IfType.list[comId].linkObjType?.length ?? 0;
+    },
+
+    /** Worn equipment (wornitems tab). */
+    equipment(): InvItemSnapshot[] {
+        return readInvComponent(findTabInvComponent(4), type => heldOps(type.iop));
+    },
+
+    /**
+     * The open bank's container component, or -1. The bank is a main modal
+     * whose TYPE_INV child carries component iops like 'Withdraw-1'.
+     */
+    bankComId(): number {
+        if (!raw || raw.mainModalId === -1) {
+            return -1;
+        }
+
+        return findInvComponentIn(raw.mainModalId, com => (com.iop?.[0] ?? '').toLowerCase().includes('withdraw'));
+    },
+
+    /** Bank contents with the component's button ops (Withdraw-1/5/10/...). */
+    bankItems(): InvItemSnapshot[] {
+        const comId = reader.bankComId();
+        if (comId === -1) {
+            return [];
+        }
+
+        return readInvComponent(comId, () => IfType.list[comId].iop ?? []);
+    },
+
+    /**
+     * The bank-mode backpack (side modal) with Deposit ops, or the regular
+     * inventory when the bank is closed.
+     */
+    bankSideItems(): InvItemSnapshot[] {
+        if (!raw || raw.sideModalId === -1) {
+            return [];
+        }
+
+        const comId = findInvComponentIn(raw.sideModalId, com => (com.iop?.[0] ?? '').toLowerCase().includes('deposit'));
+        if (comId === -1) {
+            return [];
+        }
+
+        return readInvComponent(comId, () => IfType.list[comId].iop ?? []);
     },
 
     /** Component id of the active "Click here to continue" button, or -1. */
@@ -533,36 +548,47 @@ function loopCycleNow(): number {
     return raw ? ((raw as unknown as { constructor: { loopCycle: number } }).constructor.loopCycle ?? 0) : 0;
 }
 
-let cachedInvComId = -1;
+const cachedTabInvComId = new Map<number, number>();
 
 /**
- * The backpack container: a TYPE_INV child of the tab-3 sidebar interface
- * (cache ids differ per revision, so resolve at runtime and cache).
+ * A tab's item container: a TYPE_INV child of the sidebar interface at
+ * `tabIndex` (3 = backpack, 4 = worn equipment). Cache ids differ per
+ * revision, so resolve at runtime and cache.
  */
-function findInvComponent(): number {
+function findTabInvComponent(tabIndex: number): number {
     if (!raw) {
         return -1;
     }
 
-    if (cachedInvComId !== -1) {
-        return cachedInvComId;
+    const cached = cachedTabInvComId.get(tabIndex);
+    if (cached !== undefined) {
+        return cached;
     }
 
-    const tabInterfaceId = raw.sideIcon[3];
+    const tabInterfaceId = raw.sideIcon[tabIndex];
     if (tabInterfaceId === undefined || tabInterfaceId === -1) {
         return -1;
     }
 
-    const queue: number[] = [tabInterfaceId];
+    const comId = findInvComponentIn(tabInterfaceId, com => com.objOps === true || tabIndex === 4);
+    if (comId !== -1) {
+        cachedTabInvComId.set(tabIndex, comId);
+    }
+
+    return comId;
+}
+
+/** Breadth-first search of an interface subtree for a TYPE_INV component. */
+function findInvComponentIn(rootComId: number, accept: (com: IfType) => boolean): number {
+    const queue: number[] = [rootComId];
     while (queue.length > 0) {
         const com = IfType.list[queue.shift()!];
         if (!com) {
             continue;
         }
 
-        if (com.type === ComponentType.TYPE_INV && com.objOps) {
-            cachedInvComId = com.id;
-            return cachedInvComId;
+        if (com.type === ComponentType.TYPE_INV && accept(com)) {
+            return com.id;
         }
 
         if (com.children) {
@@ -571,4 +597,37 @@ function findInvComponent(): number {
     }
 
     return -1;
+}
+
+/** Items off a TYPE_INV component's live linkObj arrays (ids stored +1). */
+function readInvComponent(comId: number, opsOf: (type: ObjType) => (string | null)[]): InvItemSnapshot[] {
+    const out: InvItemSnapshot[] = [];
+    if (comId === -1) {
+        return out;
+    }
+
+    const com = IfType.list[comId];
+    if (!com.linkObjType || !com.linkObjNumber) {
+        return out;
+    }
+
+    for (let slot = 0; slot < com.linkObjType.length; slot++) {
+        const idPlusOne = com.linkObjType[slot];
+        if (idPlusOne <= 0) {
+            continue;
+        }
+
+        const id = idPlusOne - 1;
+        const type = ObjType.list(id);
+        out.push({
+            slot,
+            id,
+            name: type.name,
+            count: com.linkObjNumber[slot],
+            ops: opsOf(type),
+            comId
+        });
+    }
+
+    return out;
 }

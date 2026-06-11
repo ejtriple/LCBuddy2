@@ -12,6 +12,8 @@ export interface InputDriver {
     interactLoc(lx: number, lz: number, typecode: number, op: number): boolean;
     takeObj(lx: number, lz: number, objId: number, op: number): boolean;
     heldOp(objId: number, slot: number, comId: number, op: number): boolean;
+    /** Component-defined item button (bank withdraw/deposit etc.). */
+    invButton(objId: number, slot: number, comId: number, op: number): boolean;
     walk(lx: number, lz: number): boolean;
     continueDialog(): boolean;
 }

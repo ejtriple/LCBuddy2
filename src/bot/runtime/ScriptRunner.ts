@@ -172,6 +172,8 @@ class ScriptRunnerImpl {
             ctx.addLog('warn', `onStop threw: ${err}`);
         }
 
+        this.bot?.disposeSubscriptions();
+
         if (Scheduler.active === ctx) {
             Scheduler.active = null;
         }

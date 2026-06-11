@@ -1,3 +1,5 @@
+import { bus, type EventMap } from '../events/EventBus.js';
+
 /**
  * Script-facing base classes (RuneMate shape). Scripts subclass one of
  * LoopingBot / TaskBot / TreeBot and only sleep via Execution.*.
@@ -7,6 +9,7 @@ export abstract class AbstractBot {
     loopDelay = 600;
 
     private logSink: ((msg: string) => void) | null = null;
+    private subscriptions: (() => void)[] = [];
 
     /** Optional lifecycle hooks. onStop also runs after a crash or stop(). */
     onStart?(): void | Promise<void>;
@@ -25,9 +28,26 @@ export abstract class AbstractBot {
         }
     }
 
+    /**
+     * Subscribe to a game event for the lifetime of this run (auto-removed on
+     * stop/crash). Callbacks run synchronously during the frame — keep them
+     * light; do real work in loop().
+     */
+    protected on<K extends keyof EventMap>(event: K, cb: (payload: EventMap[K]) => void): void {
+        this.subscriptions.push(bus.on(event, cb));
+    }
+
     /** @internal runner wiring */
     bindLog(sink: (msg: string) => void): void {
         this.logSink = sink;
+    }
+
+    /** @internal runner teardown */
+    disposeSubscriptions(): void {
+        for (const unsub of this.subscriptions) {
+            unsub();
+        }
+        this.subscriptions = [];
     }
 }
 
