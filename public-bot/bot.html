@@ -156,6 +156,86 @@
         .lcb-dim {
             color: #555;
         }
+
+        .lcb-select {
+            width: 100%;
+            background: #1a1a1a;
+            color: #ddd;
+            border: 1px solid #333;
+            border-radius: 3px;
+            padding: 3px;
+            font-family: inherit;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .lcb-buttons {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .lcb-button {
+            flex: 1;
+            background: #1a1a1a;
+            color: #ddd;
+            border: 1px solid #333;
+            border-radius: 3px;
+            padding: 4px 0;
+            font-family: inherit;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .lcb-button:hover:not(:disabled) {
+            background: #252525;
+            border-color: #04A800;
+        }
+
+        .lcb-button:disabled {
+            color: #555;
+            cursor: default;
+        }
+
+        .lcb-state-running {
+            color: #5be05b;
+        }
+
+        .lcb-state-paused {
+            color: #e0d75b;
+        }
+
+        .lcb-state-stopping {
+            color: #e0d75b;
+        }
+
+        .lcb-state-crashed {
+            color: #ff7b7b;
+        }
+
+        .lcb-log {
+            height: 150px;
+            overflow-y: auto;
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 3px;
+            padding: 4px;
+            font-size: 11px;
+        }
+
+        .lcb-log-line {
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .lcb-log-warn {
+            color: #e0d75b;
+        }
+
+        .lcb-log-error {
+            color: #ff7b7b;
+        }
     </style>
 </head>
 

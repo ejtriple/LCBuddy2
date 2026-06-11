@@ -30,6 +30,17 @@ export interface StatSnapshot {
     xp: number;
 }
 
+export interface NpcSnapshot {
+    /** Scene slot index — stable while the NPC stays in the scene. */
+    index: number;
+    name: string | null;
+    /** Combat level shown in the minimenu (-1 if none). */
+    level: number;
+    tile: WorldTile;
+    /** Chebyshev tile distance from the local player. */
+    distance: number;
+}
+
 /**
  * Bind the adapter to the live client and install the packet hook (H4).
  * Returns the list of expected internal names missing on the instance —
@@ -141,6 +152,35 @@ export const reader = {
 
     npcCount(): number {
         return raw?.npcCount ?? 0;
+    },
+
+    npcs(): NpcSnapshot[] {
+        const out: NpcSnapshot[] = [];
+        if (!raw || !raw.localPlayer) {
+            return out;
+        }
+
+        const px = raw.mapBuildBaseX + (raw.localPlayer.x >> 7);
+        const pz = raw.mapBuildBaseZ + (raw.localPlayer.z >> 7);
+
+        for (let i = 0; i < raw.npcCount; i++) {
+            const npc = raw.npc[raw.npcIds[i]];
+            if (!npc) {
+                continue;
+            }
+
+            const x = raw.mapBuildBaseX + (npc.x >> 7);
+            const z = raw.mapBuildBaseZ + (npc.z >> 7);
+            out.push({
+                index: raw.npcIds[i],
+                name: npc.type?.name ?? null,
+                level: npc.type?.vislevel ?? -1,
+                tile: { x, z, level: raw.minusedlevel },
+                distance: Math.max(Math.abs(x - px), Math.abs(z - pz))
+            });
+        }
+
+        return out;
     },
 
     localPlayerName(): string | null {

@@ -88,10 +88,15 @@ try {
     await page.waitForTimeout(2500);
 
     const panel = await page.evaluate(() => {
-        const text = (selector: string): string[] => [...document.querySelectorAll(selector)].map(n => n.textContent ?? '');
+        const text = (selector: string): string[] => Array.from(document.querySelectorAll(selector)).map(n => n.textContent ?? '');
+        const rows: Record<string, string> = {};
+        for (const node of Array.from(document.querySelectorAll('.lcb-row'))) {
+            const key = node.querySelector('.lcb-key')?.textContent ?? '';
+            rows[key] = node.querySelector('.lcb-value')?.textContent ?? '';
+        }
         return {
             banner: text('.lcb-banner')[0] ?? '',
-            rows: text('.lcb-value'),
+            rows,
             stats: text('.lcb-stat-level'),
             chat: text('.lcb-chat-line'),
             tick: (globalThis as never as { lcbuddy: { host: { tickCount: number; tickMeanMs: number } } }).lcbuddy.host.tickCount
@@ -101,7 +106,7 @@ try {
     if (panel.banner !== 'adapter self-test: ok') fail(`banner: '${panel.banner}'`);
     console.log(`banner: ${panel.banner}`);
 
-    const [state, player, tile, energy, nearby, , tick] = panel.rows;
+    const { state, player, tile, energy, nearby, tick } = panel.rows;
     if (state !== 'ingame') fail(`state row: '${state}'`);
     if (!/^\d+, \d+, \d+$/.test(tile)) fail(`tile row: '${tile}'`);
     if (!/^\d+% \/ \d+ kg$/.test(energy)) fail(`energy row: '${energy}'`);
@@ -120,14 +125,75 @@ try {
     if (after < before + 2) fail(`tick counter stalled: ${before} -> ${after}`);
     console.log(`ticks advanced ${before} -> ${after}`);
 
+    // ---- Slice 2: script runtime ----
+    type RunnerGlobal = { lcbuddy: { runner: { state: string; ctx: { log: { level: string; msg: string }[]; loopCount: number } | null }; host: { tickCount: number } } };
+    const runnerState = (): Promise<string> => page.evaluate(() => (globalThis as never as RunnerGlobal).lcbuddy.runner.state);
+    const logLines = (): Promise<string[]> => page.evaluate(() => ((globalThis as never as RunnerGlobal).lcbuddy.runner.ctx?.log ?? []).map(l => `${l.level}: ${l.msg}`));
+    const logLength = (): Promise<number> => page.evaluate(() => (globalThis as never as RunnerGlobal).lcbuddy.runner.ctx?.log.length ?? 0);
+
+    await page.selectOption('.lcb-select', 'DebugBot');
+    await page.getByRole('button', { name: 'Start' }).click();
+
+    await page.waitForFunction(() => ((globalThis as never as { lcbuddy: { runner: { ctx: { log: { msg: string }[] } | null } } }).lcbuddy.runner.ctx?.log ?? []).filter(l => l.msg.includes('nearest:')).length >= 2, undefined, { timeout: 20000 });
+    console.log('DebugBot: looping and logging');
+
+    const overlayPainted = await page.evaluate(() => {
+        const overlay = document.getElementById('overlay') as HTMLCanvasElement;
+        return (overlay.getContext('2d')?.getImageData(10, 10, 1, 1).data[3] ?? 0) > 0;
+    });
+    if (!overlayPainted) fail('overlay not painted while DebugBot running');
+    console.log('DebugBot: overlay painted');
+
+    await page.screenshot({ path: 'out/e2e-smoke-runtime.png' });
+
+    await page.getByRole('button', { name: 'Pause' }).click();
+    if ((await runnerState()) !== 'paused') fail('pause did not take');
+    const pausedLogLength = await logLength();
+    await page.waitForTimeout(2500);
+    if ((await logLength()) !== pausedLogLength) fail('script made progress while paused');
+    console.log('DebugBot: paused cleanly (no progress while paused)');
+
+    await page.getByRole('button', { name: 'Resume' }).click();
+    await page.waitForFunction(len => ((globalThis as never as { lcbuddy: { runner: { ctx: { log: unknown[] } | null } } }).lcbuddy.runner.ctx?.log.length ?? 0) > len, pausedLogLength, { timeout: 15000 });
+    console.log('DebugBot: resumed');
+
+    await page.getByRole('button', { name: 'Stop' }).click();
+    await page.waitForFunction(() => (globalThis as never as { lcbuddy: { runner: { state: string } } }).lcbuddy.runner.state === 'stopped', undefined, { timeout: 10000 });
+    if (!(await logLines()).some(l => l.includes('DebugBot stopped'))) fail('onStop did not run on stop');
+    console.log('DebugBot: stopped cleanly, onStop ran');
+
+    // crash isolation: CrashTestBot throws on iteration 3
+    await page.selectOption('.lcb-select', 'CrashTestBot');
+    await page.getByRole('button', { name: 'Start' }).click();
+    await page.waitForFunction(() => (globalThis as never as { lcbuddy: { runner: { state: string } } }).lcbuddy.runner.state === 'crashed', undefined, { timeout: 15000 });
+
+    const crashLog = await logLines();
+    if (!crashLog.some(l => l.includes('deliberate CrashTestBot explosion'))) fail('crash not reported in log');
+    if (!crashLog.some(l => l.includes('onStop ran'))) fail('onStop did not run after crash');
+    console.log('CrashTestBot: crashed in isolation, error logged, onStop ran');
+
+    // the client must have survived the crash: ticks still flowing, and a new
+    // script starts fine
+    const tickBeforeSurvival = await page.evaluate(() => (globalThis as never as RunnerGlobal).lcbuddy.host.tickCount);
+    await page.waitForTimeout(2000);
+    const tickAfterSurvival = await page.evaluate(() => (globalThis as never as RunnerGlobal).lcbuddy.host.tickCount);
+    if (tickAfterSurvival < tickBeforeSurvival + 2) fail('client tick flow died after script crash');
+
+    await page.selectOption('.lcb-select', 'DebugBot');
+    await page.getByRole('button', { name: 'Start' }).click();
+    await page.waitForFunction(() => (globalThis as never as { lcbuddy: { runner: { state: string } } }).lcbuddy.runner.state === 'running', undefined, { timeout: 10000 });
+    await page.getByRole('button', { name: 'Stop' }).click();
+    await page.waitForFunction(() => (globalThis as never as { lcbuddy: { runner: { state: string } } }).lcbuddy.runner.state === 'stopped', undefined, { timeout: 10000 });
+    console.log('client survived the crash; restart works');
+
     await page.screenshot({ path: 'out/e2e-smoke.png' });
-    console.log('screenshot: out/e2e-smoke.png');
+    console.log('screenshots: out/e2e-smoke.png, out/e2e-smoke-runtime.png');
 
     if (resourceNoise.length > 0) {
         console.log(`note: ${resourceNoise.length} resource-load failures (also present on the stock client): ${resourceNoise.join(', ')}`);
     }
 
-    const fatal = pageErrors.filter(e => !e.includes('AudioContext') && !e.includes('autoplay'));
+    const fatal = pageErrors.filter(e => !e.includes('AudioContext') && !e.includes('autoplay') && !e.includes('deliberate CrashTestBot explosion'));
     if (fatal.length > 0) fail(`page errors:\n${fatal.join('\n')}`);
 
     console.log('PASS');

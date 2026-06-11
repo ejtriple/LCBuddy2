@@ -1,13 +1,23 @@
 import { reader } from '../adapter/ClientAdapter.js';
 import type { BotHostImpl } from '../BotHost.js';
+import { ScriptRegistry } from '../runtime/ScriptRegistry.js';
+import { ScriptRunner } from '../runtime/ScriptRunner.js';
 
 /**
- * Read-only live state panel (Slice 1). Plain DOM, no framework. The only
+ * Live state panel + script controls. Plain DOM, no framework. The only
  * DOM-dependent code outside bot.html/main.ts, by design — keeps a headless
  * build viable later.
  */
 export default class BotPanel {
     private host: BotHostImpl;
+
+    private scriptSelect: HTMLSelectElement;
+    private startBtn: HTMLButtonElement;
+    private pauseBtn: HTMLButtonElement;
+    private stopBtn: HTMLButtonElement;
+    private scriptStatus: HTMLElement;
+    private logBox: HTMLElement;
+    private unsubLog: (() => void) | null = null;
 
     private banner: HTMLElement;
     private stateCell: HTMLElement;
@@ -35,6 +45,29 @@ export default class BotPanel {
         this.banner = el('div', 'lcb-banner');
         root.appendChild(this.banner);
 
+        const script = el('div', 'lcb-section');
+        script.appendChild(sectionTitle('script'));
+
+        this.scriptSelect = document.createElement('select');
+        this.scriptSelect.className = 'lcb-select';
+        for (const meta of ScriptRegistry.list()) {
+            const option = document.createElement('option');
+            option.value = meta.name;
+            option.textContent = meta.name;
+            option.title = meta.description;
+            this.scriptSelect.appendChild(option);
+        }
+        script.appendChild(this.scriptSelect);
+
+        const buttons = el('div', 'lcb-buttons');
+        this.startBtn = button(buttons, 'Start', () => this.handleStart());
+        this.pauseBtn = button(buttons, 'Pause', () => this.handlePause());
+        this.stopBtn = button(buttons, 'Stop', () => ScriptRunner.stop());
+        script.appendChild(buttons);
+
+        this.scriptStatus = row(script, 'status');
+        root.appendChild(script);
+
         const status = el('div', 'lcb-section');
         status.appendChild(sectionTitle('status'));
         this.stateCell = row(status, 'state');
@@ -58,6 +91,17 @@ export default class BotPanel {
         chat.appendChild(this.chatList);
         root.appendChild(chat);
 
+        const logSection = el('div', 'lcb-section');
+        logSection.appendChild(sectionTitle('log'));
+        this.logBox = el('div', 'lcb-log');
+        logSection.appendChild(this.logBox);
+        root.appendChild(logSection);
+
+        ScriptRunner.onChange(() => {
+            this.renderScriptControls();
+            this.renderLog();
+        });
+
         // stat cells are created once (sparse over unused skill ids), updated in place
         for (let i = 0; i < reader.skillCount(); i++) {
             if (!reader.skillUsed(i)) {
@@ -77,6 +121,77 @@ export default class BotPanel {
 
         host.addDrawListener(() => this.maybeRender());
         this.render();
+        this.renderScriptControls();
+    }
+
+    private handleStart(): void {
+        const meta = ScriptRegistry.get(this.scriptSelect.value);
+        if (!meta) {
+            return;
+        }
+
+        try {
+            ScriptRunner.start(meta);
+        } catch (err) {
+            console.error('[lcbuddy] start failed', err);
+            return;
+        }
+
+        // follow the new run's log
+        this.unsubLog?.();
+        this.unsubLog = ScriptRunner.ctx?.onLog(() => this.renderLog()) ?? null;
+        this.renderLog();
+    }
+
+    private handlePause(): void {
+        if (ScriptRunner.state === 'paused') {
+            ScriptRunner.resume();
+        } else {
+            ScriptRunner.pause();
+        }
+    }
+
+    private renderScriptControls(): void {
+        const state = ScriptRunner.state;
+        const active = state === 'running' || state === 'paused' || state === 'stopping';
+
+        this.startBtn.disabled = active;
+        this.pauseBtn.disabled = !(state === 'running' || state === 'paused');
+        this.pauseBtn.textContent = state === 'paused' ? 'Resume' : 'Pause';
+        this.stopBtn.disabled = !active || state === 'stopping';
+        this.scriptSelect.disabled = active;
+
+        const ctx = ScriptRunner.ctx;
+        if (!ctx) {
+            this.scriptStatus.textContent = 'idle';
+        } else {
+            const name = ScriptRunner.meta?.name ?? '?';
+            const extra = state === 'crashed' && ctx.crashError ? ` — ${ctx.crashError.message}` : ` — ${ctx.loopCount} loops`;
+            this.scriptStatus.textContent = `${name}: ${state}${extra}`;
+        }
+        this.scriptStatus.className = `lcb-value lcb-state-${state}`;
+    }
+
+    private renderLog(): void {
+        const ctx = ScriptRunner.ctx;
+        if (!ctx) {
+            this.logBox.replaceChildren();
+            return;
+        }
+
+        const atBottom = this.logBox.scrollTop + this.logBox.clientHeight >= this.logBox.scrollHeight - 4;
+
+        this.logBox.replaceChildren();
+        for (const line of ctx.log.slice(-200)) {
+            const div = el('div', `lcb-log-line lcb-log-${line.level}`);
+            const time = new Date(line.time).toTimeString().slice(0, 8);
+            div.textContent = `${time} ${line.msg}`;
+            this.logBox.appendChild(div);
+        }
+
+        if (atBottom) {
+            this.logBox.scrollTop = this.logBox.scrollHeight;
+        }
     }
 
     /** Throttle DOM updates to ~5Hz; the draw hook fires at up to 50Hz. */
@@ -168,4 +283,13 @@ function row(parent: HTMLElement, label: string): HTMLElement {
     line.appendChild(value);
     parent.appendChild(line);
     return value;
+}
+
+function button(parent: HTMLElement, label: string, onClick: () => void): HTMLButtonElement {
+    const node = document.createElement('button');
+    node.className = 'lcb-button';
+    node.textContent = label;
+    node.addEventListener('click', onClick);
+    parent.appendChild(node);
+    return node;
 }
