@@ -60,6 +60,25 @@ client's own `login()`, and asserts the panel mirrors live state: green adapter 
 tile, energy, stats, chat, and an advancing tick counter. Defaults to a unique per-run username —
 re-logging the same account within a few seconds of disconnect gets rejected as already-online.
 
+## Bot functional tests
+
+```sh
+bun tools/chicken-test.ts [minutes]   # ChickenKiller: fight/loot/bury cycle at the Lumbridge east pen
+bun tools/woodcut-test.ts [minutes]   # Woodcutter: ::give axe, chop/drop near (3230, 3250)
+```
+
+Both create a fresh account each run. Facts the harnesses rely on (verified on Engine-TS@274 dev):
+
+- **New accounts spawn tutorial-locked on Tutorial Island** with no sidebar tabs — so no
+  inventory component client-side. The login script only (re)starts the tutorial when the player
+  is *standing on the island* (`login.rs2:81`), so `::tele` away + re-login unlocks all tabs.
+- Re-login within ~10s of a disconnect bounces off "already online"; the harnesses retry.
+- Debug commands (dev server): `::tele level,mx,mz,lx,lz` (jagex map-square format),
+  `::give <obj_debugname> [count]`, `::setvar <varp> <value>` — all work, so the in-process
+  `player.staffModLevel` is ≥3 in dev mode regardless of the `staffmodlevel=2` byte in the login
+  reply.
+- Lumbridge east chicken pen ≈ (3228-3236, 3294-3300); trees NE of Lumbridge ≈ (3225-3235, 3245-3255).
+
 ## Login probe (headless smoke test)
 
 ```sh
