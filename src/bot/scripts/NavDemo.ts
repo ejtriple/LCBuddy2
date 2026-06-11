@@ -5,17 +5,22 @@ import Tile from '../api/Tile.js';
 import { Traversal } from '../api/Traversal.js';
 
 /**
- * Slice 5b demo: web-walks a fixed route from wherever it starts — through
- * the east-Lumbridge chicken-pen gate into the pen, then on to Varrock
- * square — logging arrival/failure timings per leg. Reads no settings; idles
- * when done (check the log for 'NavDemo complete').
+ * Slice 5 exit-criterion demo: web-walks a fixed route from wherever it
+ * starts — up and down the Lumbridge castle staircase, through the
+ * east-Lumbridge chicken-pen gate, then the three-city crossing on to
+ * Varrock square and Falador square (two more gates) — logging
+ * arrival/failure timings per leg. Reads no settings; idles when done
+ * (check the log for 'NavDemo complete').
  */
 export default class NavDemo extends LoopingBot {
     override loopDelay = 600;
 
     private readonly legs = [
+        { name: 'castle upstairs L1', dest: new Tile(3205, 3209, 1) },
+        { name: 'back down to courtyard', dest: new Tile(3211, 3216, 0) },
         { name: 'chicken pen interior', dest: new Tile(3232, 3298, 0) },
-        { name: 'Varrock square', dest: new Tile(3213, 3428, 0) }
+        { name: 'Varrock square', dest: new Tile(3213, 3428, 0) },
+        { name: 'Falador square', dest: new Tile(2964, 3378, 0) }
     ];
 
     private legIndex = 0;

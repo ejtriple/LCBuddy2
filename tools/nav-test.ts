@@ -11,7 +11,7 @@ const username = process.argv[3] ?? `nav${Date.now().toString(36).slice(-7)}`;
 
 // Lumbridge castle courtyard
 const TELE = '::tele 0,50,50,22,22';
-const DEMO_TIMEOUT_MS = 10 * 60_000;
+const DEMO_TIMEOUT_MS = 25 * 60_000;
 
 function fail(msg: string): never {
     console.error(`FAIL: ${msg}`);
@@ -113,7 +113,7 @@ try {
 
     if (!done) fail(`demo did not complete within ${DEMO_TIMEOUT_MS / 60000}min (${arrivals.length} arrivals, ${failures.length} failures)`);
     if (failures.length > 0) fail(`legs failed: ${failures.join(' | ')}`);
-    if (arrivals.length < 2) fail(`expected 2 arrivals, saw ${arrivals.length}`);
+    if (arrivals.length < 5) fail(`expected 5 arrivals, saw ${arrivals.length}`);
 
     console.log(`\nresult: ${arrivals.join(' | ')}`);
     console.log('PASS');
