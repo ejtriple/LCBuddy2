@@ -27,7 +27,8 @@ fs.copyFileSync('src/3rdparty/tinymidipcm/tinymidipcm.wasm', 'out/tinymidipcm.wa
 
 const entrypoints: [entry: string, output: string][] = [
     ['src/bot/main.ts', 'botclient.js'],
-    ['src/io/OnDemandWorker.ts', 'ondemandworker.js']
+    ['src/io/OnDemandWorker.ts', 'ondemandworker.js'],
+    ['src/bot/nav/NavWorker.ts', 'navworker.js']
 ];
 
 for (const [entry, output] of entrypoints) {

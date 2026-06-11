@@ -13,11 +13,17 @@ fi
 bun run build
 bun run build:bot
 
+# the nav worker needs the baked collision pack; build it once if absent
+if [ ! -f out/collision.lcnav.gz ]; then
+    bun tools/nav/build-collision.ts --engine "$ENGINE"
+fi
+
 cp out/client.js out/client.js.map out/ondemandworker.js out/ondemandworker.js.map \
    out/tinymidipcm.wasm "$ENGINE/public/client/"
 
 mkdir -p "$ENGINE/public/bot"
 cp out/botclient.js out/botclient.js.map out/ondemandworker.js out/ondemandworker.js.map \
+   out/navworker.js out/navworker.js.map out/collision.lcnav.gz \
    out/tinymidipcm.wasm "$ENGINE/public/bot/"
 cp public-bot/bot.html "$ENGINE/public/bot.html"
 
