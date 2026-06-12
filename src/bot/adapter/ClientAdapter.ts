@@ -504,6 +504,37 @@ export const reader = {
         return -1;
     },
 
+    /**
+     * Selectable option lines in the open chat dialog ("Select an Option"
+     * dialogs). Each is a BUTTON_OK child with text — clicking fires IF_BUTTON
+     * with the child's component id (Client.ts ~9802). Used to answer event
+     * dialogs (genie/old-man) and skill choices.
+     */
+    chatOptions(): { comId: number; text: string }[] {
+        const out: { comId: number; text: string }[] = [];
+        if (!raw || raw.chatModalId === -1) {
+            return out;
+        }
+
+        const visit = (comId: number): void => {
+            const com = IfType.list[comId];
+            if (!com) {
+                return;
+            }
+            if (com.buttonType === ButtonType.BUTTON_OK && com.buttonText) {
+                out.push({ comId, text: com.buttonText });
+            }
+            if (com.children) {
+                for (const child of com.children) {
+                    visit(child);
+                }
+            }
+        };
+
+        visit(raw.chatModalId);
+        return out;
+    },
+
     /** Scene-local -> world tile (current plane), or null when detached. */
     toWorld(lx: number, lz: number): WorldTile | null {
         if (!raw) {
@@ -892,6 +923,15 @@ export const actions = {
         }
 
         return actions.menuAction(MiniMenuAction.PAUSE_BUTTON, 0, 0, comId);
+    },
+
+    /**
+     * Click a dialog option / interface button by component id (IF_BUTTON).
+     * Dispatched directly in both input modes — chat-option clicks are rare
+     * event-recovery UI, not labeled grinding telemetry.
+     */
+    ifButton(comId: number): boolean {
+        return actions.menuAction(MiniMenuAction.IF_BUTTON, 0, 0, comId);
     }
 };
 

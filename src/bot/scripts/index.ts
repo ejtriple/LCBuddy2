@@ -3,6 +3,7 @@ import ChickenKiller from './ChickenKiller.js';
 import CrashTestBot from './CrashTestBot.js';
 import DebugBot from './DebugBot.js';
 import NavDemo from './NavDemo.js';
+import RockCrab from './RockCrab.js';
 import Woodcutter from './Woodcutter.js';
 
 ScriptRegistry.register({
@@ -21,6 +22,12 @@ ScriptRegistry.register({
     name: 'Woodcutter',
     description: 'Chops trees and drops logs (anchor = start tile, needs an axe)',
     create: () => new Woodcutter()
+});
+
+ScriptRegistry.register({
+    name: 'RockCrab',
+    description: 'Rellekka rock crabs: aggro-stack-kill-reset, loots key halves (web-walks to the field)',
+    create: () => new RockCrab()
 });
 
 ScriptRegistry.register({

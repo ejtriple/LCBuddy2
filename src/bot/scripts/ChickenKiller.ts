@@ -1,6 +1,7 @@
 import { TaskBot, type Task } from '../api/Bot.js';
 import { Execution } from '../api/Execution.js';
 import { Game } from '../api/Game.js';
+import { RandomEventTask } from '../api/RandomEvents.js';
 import Tile from '../api/Tile.js';
 import { ChatDialog } from '../api/hud/ChatDialog.js';
 import { GroundItems } from '../api/queries/GroundItems.js';
@@ -52,7 +53,7 @@ export default class ChickenKiller extends TaskBot {
             }
         });
 
-        this.add(new ContinueDialog(this), new DeathRecovery(this), new BuryBones(this), new LootBones(this), new Rest(this), new Fight(this), new ReturnToAnchor(this));
+        this.add(new RandomEventTask(msg => this.log(msg), ['chicken']), new ContinueDialog(this), new DeathRecovery(this), new BuryBones(this), new LootBones(this), new Rest(this), new Fight(this), new ReturnToAnchor(this));
     }
 
     override onPaint(ctx: CanvasRenderingContext2D): void {
