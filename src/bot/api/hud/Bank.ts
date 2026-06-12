@@ -26,12 +26,12 @@ export const Bank = {
     },
 
     /** Click a Withdraw-* button on a bank item, e.g. withdraw('Logs', 'Withdraw-5'). */
-    withdraw(name: string, op: string = 'Withdraw-1'): boolean {
+    withdraw(name: string, op: string = 'Withdraw-1'): boolean | Promise<boolean> {
         return clickInvButton(reader.bankItems(), name, op);
     },
 
     /** Click a Deposit-* button on a backpack item while the bank is open. */
-    deposit(name: string, op: string = 'Deposit-1'): boolean {
+    deposit(name: string, op: string = 'Deposit-1'): boolean | Promise<boolean> {
         return clickInvButton(reader.bankSideItems(), name, op);
     },
 
@@ -56,7 +56,7 @@ export const Bank = {
     }
 };
 
-function clickInvButton(items: InvItemSnapshot[], name: string, opLabel: string): boolean {
+function clickInvButton(items: InvItemSnapshot[], name: string, opLabel: string): boolean | Promise<boolean> {
     const wanted = name.toLowerCase();
     const item = items.find(i => i.name?.toLowerCase() === wanted);
     if (!item) {

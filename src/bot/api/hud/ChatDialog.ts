@@ -16,7 +16,8 @@ export const ChatDialog = {
     /** Press continue and wait for the dialog page to change. */
     async continue(): Promise<boolean> {
         const before = reader.modals().chat;
-        if (!ActionRouter.driver.continueDialog()) {
+        // direct resolves synchronously; synthetic spans the mouse gesture
+        if (!(await ActionRouter.driver.continueDialog())) {
             return false;
         }
 

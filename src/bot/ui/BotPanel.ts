@@ -1,5 +1,6 @@
 import { reader } from '../adapter/ClientAdapter.js';
 import type { BotHostImpl } from '../BotHost.js';
+import { ActionRouter } from '../input/ActionRouter.js';
 import { ScriptRegistry } from '../runtime/ScriptRegistry.js';
 import { ScriptRunner } from '../runtime/ScriptRunner.js';
 
@@ -167,7 +168,8 @@ export default class BotPanel {
         } else {
             const name = ScriptRunner.meta?.name ?? '?';
             const extra = state === 'crashed' && ctx.crashError ? ` — ${ctx.crashError.message}` : ` — ${ctx.loopCount} loops`;
-            this.scriptStatus.textContent = `${name}: ${state}${extra}`;
+            const mode = state === 'running' || state === 'paused' ? ` [${ActionRouter.activeMode}]` : '';
+            this.scriptStatus.textContent = `${name}: ${state}${extra}${mode}`;
         }
         this.scriptStatus.className = `lcb-value lcb-state-${state}`;
     }

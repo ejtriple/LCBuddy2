@@ -11,7 +11,13 @@ import Tile from '../Tile.js';
 
 export interface Interactable {
     actions(): string[];
-    interact(action: string): boolean;
+    /**
+     * Dispatch an action by name. DIRECT resolves synchronously (boolean);
+     * SYNTHETIC returns a promise for the whole mouse gesture. Scripts that
+     * ignore the promise still work — outcome checks (delayUntil on game
+     * state) are the source of truth either way.
+     */
+    interact(action: string): boolean | Promise<boolean>;
 }
 
 export interface Locatable {
@@ -74,7 +80,7 @@ export class Npc implements Interactable, Locatable {
         return reader.npcs().some(n => n.index === this.snap.index && n.name === this.snap.name);
     }
 
-    interact(action: string): boolean {
+    interact(action: string): boolean | Promise<boolean> {
         const op = opIndex(this.snap.ops, action);
         if (op === -1) {
             return false;
@@ -131,7 +137,7 @@ export class Loc implements Interactable, Locatable {
         return presentOps(this.snap.ops);
     }
 
-    interact(action: string): boolean {
+    interact(action: string): boolean | Promise<boolean> {
         const op = opIndex(this.snap.ops, action);
         if (op === -1) {
             return false;
@@ -173,7 +179,7 @@ export class GroundItem implements Interactable, Locatable {
         return presentOps(this.snap.ops);
     }
 
-    interact(action: string): boolean {
+    interact(action: string): boolean | Promise<boolean> {
         const op = opIndex(this.snap.ops, action);
         if (op === -1) {
             return false;

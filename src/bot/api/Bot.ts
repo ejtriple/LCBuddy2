@@ -8,6 +8,14 @@ export abstract class AbstractBot {
     /** Wall-clock ms between loop() iterations when loop() returns void. */
     loopDelay = 600;
 
+    /**
+     * Input mode for this script: 'direct' (default, byte-identical packets
+     * with zero mouse telemetry) or 'synthetic' (virtual cursor + real
+     * minimenu, Slice 6). Applied by the runner at start; the page-level
+     * `?inputmode=` override wins.
+     */
+    inputMode: 'direct' | 'synthetic' = 'direct';
+
     private logSink: ((msg: string) => void) | null = null;
     private subscriptions: (() => void)[] = [];
 

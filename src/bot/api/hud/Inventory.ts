@@ -26,7 +26,7 @@ export class InvItem {
     }
 
     /** Held op by name, e.g. item.interact('Bury'). */
-    interact(action: string): boolean {
+    interact(action: string): boolean | Promise<boolean> {
         const wanted = action.toLowerCase();
         for (let i = 0; i < this.snap.ops.length; i++) {
             if (this.snap.ops[i]?.toLowerCase() === wanted) {

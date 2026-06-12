@@ -9,8 +9,9 @@ import { ActionRouter } from '../input/ActionRouter.js';
  * inside (or clamped to) the loaded 104x104 scene.
  */
 export const DirectNavigator = {
-    /** Fire one walk click toward the tile (clamped into the scene). */
-    walk(dest: WorldTile): boolean {
+    /** Fire one walk click toward the tile (clamped into the scene).
+     *  Synthetic mode returns a promise for the minimap-click gesture. */
+    walk(dest: WorldTile): boolean | Promise<boolean> {
         const me = reader.worldTile();
         if (!me) {
             return false;
