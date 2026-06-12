@@ -6,7 +6,7 @@ import { ChatDialog } from '../api/hud/ChatDialog.js';
 import { Inventory } from '../api/hud/Inventory.js';
 import { Skills } from '../api/hud/Skills.js';
 import { Locs } from '../api/queries/Locs.js';
-import { DirectNavigator } from '../nav/DirectNavigator.js';
+import { Traversal } from '../api/Traversal.js';
 
 const LEASH_RADIUS = 15;
 
@@ -174,6 +174,6 @@ class ReturnToAnchor implements Task {
 
     async execute(): Promise<void> {
         this.bot.setStatus('returning to anchor');
-        await DirectNavigator.walkTo(this.bot.getAnchor(), 3, 30000);
+        await Traversal.walkTo(this.bot.getAnchor(), { radius: 3, timeoutMs: 90000 });
     }
 }
