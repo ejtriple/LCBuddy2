@@ -267,11 +267,24 @@ export const events: {
 
 export type InputMode = 'direct' | 'synthetic';
 
+/** Typed accessor for the run's parameters (from the manifest settingsSchema,
+ *  overlaid with panel edits and ?Script.key=… URL overrides). */
+export interface SettingsBag {
+    bool(key: string, fallback?: boolean): boolean;
+    num(key: string, fallback?: number): number;
+    str(key: string, fallback?: string): string;
+    list(key: string, fallback?: string[]): string[];
+    tile(key: string, fallback: Tile): Tile;
+    raw(): Record<string, unknown>;
+}
+
 export abstract class AbstractBot {
     /** Wall-clock ms between loop() iterations when loop() returns void. */
     loopDelay: number;
     /** Input mode for this run: 'direct' (default) or 'synthetic'. */
     inputMode: InputMode;
+    /** Resolved parameters for this run; read e.g. this.settings.bool('x'). */
+    readonly settings: SettingsBag;
     onStart?(): void | Promise<void>;
     /** Runs after stop AND crash — clean up here. */
     onStop?(): void;
@@ -323,11 +336,26 @@ export abstract class TreeBot extends LoopingBot {
 
 // ---- manifest ----
 
+export type SettingType = 'boolean' | 'number' | 'string' | 'string[]' | 'tile';
+
+export interface SettingDef {
+    type: SettingType;
+    default: unknown;
+    label?: string;
+    min?: number;
+    max?: number;
+    help?: string;
+}
+
+/** Parameter schema: shown as a form in the panel, overridable via
+ *  ?ScriptName.key=value. Read at runtime with this.settings. */
+export type SettingsSchema = Record<string, SettingDef>;
+
 export interface BotManifestInput {
     name: string;
     description?: string;
     version?: string;
-    settingsSchema?: unknown;
+    settingsSchema?: SettingsSchema;
     create(): AbstractBot;
 }
 

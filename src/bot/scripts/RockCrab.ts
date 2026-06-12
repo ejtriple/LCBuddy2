@@ -10,26 +10,44 @@ import { GroundItems } from '../api/queries/GroundItems.js';
 import { Npcs, type Npc } from '../api/queries/Npcs.js';
 import { DirectNavigator } from '../nav/DirectNavigator.js';
 import { Traversal } from '../api/Traversal.js';
+import type { SettingsSchema } from '../runtime/Settings.js';
 
 // The rock crab field east of Rellekka, on the northern shoreline (verified
 // live: dormant "Rocks" NPCs at x 2694-2719, z 3714-3729; walking adjacent
 // wakes them into attacking "Rock Crab" lvl 13). Two clusters share one
 // scene, so the whole spot is reachable with scene-local walking.
-const FIELD = new Tile(2710, 3720, 0);
-const FIELD_RADIUS = 15;
+const DEFAULT_FIELD = new Tile(2710, 3720, 0);
 // Inland reset tile, ~21 tiles south of the field — far enough that the crabs
 // de-aggro and revert, so walking back in wakes them again (the "run out and
 // back" reset).
-const RESET_TILE = new Tile(2712, 3699, 0);
-
-const DESIRED_STACK = 3; // gather this many crabs before clearing them
+const DEFAULT_RESET = new Tile(2712, 3699, 0);
 const MAX_FAILED_WAKES = 3; // consecutive dud wakes => area is de-aggro'd
-const FIGHT_HP_GATE = 0.4;
-const REST_HP = 0.75;
 
 // Valuables to grab off the ground. Both crystal-key halves share the item
 // name "Half of a key"; the rest are the notable rock-crab drops.
-const LOOT_NAMES = ['half of a key', 'casket', 'clue scroll', 'small oyster pearls', 'oyster pearls', 'uncut sapphire', 'uncut emerald', 'uncut ruby', 'uncut diamond'];
+const DEFAULT_LOOT = 'half of a key, casket, clue scroll, small oyster pearls, oyster pearls, uncut sapphire, uncut emerald, uncut ruby, uncut diamond';
+
+/** Tunable parameters (panel + `?RockCrab.<key>=...`). The field/reset tiles
+ *  let you point it at a different rock-crab spot entirely. */
+export const SETTINGS: SettingsSchema = {
+    field: { type: 'tile', default: DEFAULT_FIELD, label: 'Field centre (x,z)' },
+    resetTile: { type: 'tile', default: DEFAULT_RESET, label: 'Run-out reset tile (x,z)' },
+    fieldRadius: { type: 'number', default: 15, min: 5, max: 30, label: 'Field radius (tiles)' },
+    stack: { type: 'number', default: 3, min: 1, max: 8, label: 'Crabs to stack before clearing' },
+    fightHpGate: { type: 'number', default: 40, min: 0, max: 100, label: 'Retreat below HP%' },
+    restUntilHp: { type: 'number', default: 75, min: 0, max: 100, label: 'Rest until HP%' },
+    loot: { type: 'string[]', default: DEFAULT_LOOT.split(',').map(s => s.trim()), label: 'Loot item names' }
+};
+
+// Active run config — set from settings in onStart. Safe as module state
+// because exactly one script runs at a time (ADR-0006).
+let FIELD = DEFAULT_FIELD;
+let RESET_TILE = DEFAULT_RESET;
+let FIELD_RADIUS = 15;
+let DESIRED_STACK = 3;
+let FIGHT_HP_GATE = 0.4;
+let REST_HP = 0.75;
+let LOOT_NAMES = DEFAULT_LOOT.split(',').map(s => s.trim());
 
 /**
  * Rock crab trainer for the Rellekka shoreline. Walks among the dormant
@@ -51,7 +69,16 @@ export default class RockCrab extends TaskBot {
 
     override async onStart(): Promise<void> {
         await Execution.delayUntil(() => Game.ingame() && Game.tile() !== null, 0);
-        this.log(`RockCrab starting — field ${FIELD}, attack lvl ${Skills.level('attack')}`);
+
+        FIELD = this.settings.tile('field', DEFAULT_FIELD);
+        RESET_TILE = this.settings.tile('resetTile', DEFAULT_RESET);
+        FIELD_RADIUS = this.settings.num('fieldRadius', 15);
+        DESIRED_STACK = this.settings.num('stack', 3);
+        FIGHT_HP_GATE = this.settings.num('fightHpGate', 40) / 100;
+        REST_HP = this.settings.num('restUntilHp', 75) / 100;
+        LOOT_NAMES = this.settings.list('loot', LOOT_NAMES).map(s => s.toLowerCase());
+
+        this.log(`RockCrab starting — field ${FIELD} r${FIELD_RADIUS}, stack ${DESIRED_STACK}, attack lvl ${Skills.level('attack')}`);
 
         this.on('chat.message', e => {
             if (/oh dear.*you are dead/i.test(e.text)) {

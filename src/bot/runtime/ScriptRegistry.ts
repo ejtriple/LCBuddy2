@@ -1,4 +1,5 @@
 import type { AbstractBot } from '../api/Bot.js';
+import type { SettingsSchema } from './Settings.js';
 
 export interface ScriptMeta {
     name: string;
@@ -6,6 +7,8 @@ export interface ScriptMeta {
     version?: string;
     /** Where the script came from: undefined = built-in, else URL/file label. */
     origin?: string;
+    /** Tunable parameters shown in the panel and resolvable from the URL. */
+    settingsSchema?: SettingsSchema;
     create(): AbstractBot;
 }
 

@@ -8,8 +8,14 @@ import { Inventory } from '../api/hud/Inventory.js';
 import { Skills } from '../api/hud/Skills.js';
 import { Locs } from '../api/queries/Locs.js';
 import { Traversal } from '../api/Traversal.js';
+import type { SettingsSchema } from '../runtime/Settings.js';
 
-const LEASH_RADIUS = 15;
+/** Tunable parameters (panel + `?Woodcutter.<key>=...`). */
+export const SETTINGS: SettingsSchema = {
+    treeName: { type: 'string', default: 'Tree', label: 'Tree name', help: 'e.g. Tree, Oak, Willow' },
+    chopAction: { type: 'string', default: 'Chop down', label: 'Chop action' },
+    leashRadius: { type: 'number', default: 15, min: 3, max: 30, label: 'Leash radius (tiles)' }
+};
 
 /**
  * Slice 4 exit-criterion bot: chops trees and drops the logs, forever.
@@ -25,12 +31,20 @@ export default class Woodcutter extends TaskBot {
     private status = 'starting';
     private chopping = false;
 
+    private leash = 15;
+    private treeName = 'Tree';
+    private chopAction = 'Chop down';
+
     override async onStart(): Promise<void> {
         await Execution.delayUntil(() => Game.ingame() && Game.tile() !== null, 0);
 
+        this.leash = this.settings.num('leashRadius', 15);
+        this.treeName = this.settings.str('treeName', 'Tree');
+        this.chopAction = this.settings.str('chopAction', 'Chop down');
+
         const here = Game.tile()!;
         this.anchor = new Tile(here.x, here.z, here.level);
-        this.log(`anchored at ${this.anchor}, woodcutting lvl ${Skills.level('woodcutting')}`);
+        this.log(`anchored at ${this.anchor}, chopping ${this.treeName}, woodcutting lvl ${Skills.level('woodcutting')}`);
 
         this.on('skill.xp', e => {
             if (e.name === 'woodcutting') {
@@ -66,6 +80,16 @@ export default class Woodcutter extends TaskBot {
 
     getAnchor(): Tile {
         return this.anchor!;
+    }
+
+    leashRadius(): number {
+        return this.leash;
+    }
+    tree(): string {
+        return this.treeName;
+    }
+    chop(): string {
+        return this.chopAction;
     }
 
     /** Set by the skill.xp listener; consumed by Chop to detect progress. */
@@ -131,9 +155,9 @@ class Chop implements Task {
             return;
         }
 
-        this.bot.setStatus(`chopping tree at ${tree.tile()}`);
-        if (!tree.interact('Chop down')) {
-            this.bot.log(`no 'Chop down' op on tree? ops=[${tree.actions().join(', ')}]`);
+        this.bot.setStatus(`chopping ${this.bot.tree()} at ${tree.tile()}`);
+        if (!tree.interact(this.bot.chop())) {
+            this.bot.log(`no '${this.bot.chop()}' op on ${this.bot.tree()}? ops=[${tree.actions().join(', ')}]`);
             await Execution.delayTicks(2);
             return;
         }
@@ -158,9 +182,9 @@ class Chop implements Task {
     private findTree() {
         const anchor = this.bot.getAnchor();
         return Locs.query()
-            .name('Tree')
-            .action('Chop down')
-            .where(l => l.tile().distanceTo(anchor) <= LEASH_RADIUS)
+            .name(this.bot.tree())
+            .action(this.bot.chop())
+            .where(l => l.tile().distanceTo(anchor) <= this.bot.leashRadius())
             .nearest();
     }
 }
@@ -170,7 +194,7 @@ class ReturnToAnchor implements Task {
 
     validate(): boolean {
         const here = Game.tile();
-        return here !== null && this.bot.getAnchor().distanceTo(here) > LEASH_RADIUS;
+        return here !== null && this.bot.getAnchor().distanceTo(here) > this.bot.leashRadius();
     }
 
     async execute(): Promise<void> {

@@ -48,10 +48,11 @@ if (typeof document !== 'undefined' && document.getElementById('canvas')) {
     // globalThis.__lcbuddy through the @lcbuddy/api shim (ADR-0004).
     installAbi();
 
-    // Auto-relogin on disconnect while a script is active (Slice 7);
-    // disable with bot.html?autorelogin=0
+    // Login keeper (Slice 7): re-login on disconnect while a script is active.
+    // disable with bot.html?autorelogin=0; bot.html?autologin=1 also logs in
+    // unprompted from the title screen using saved credentials (unattended).
     if (params.get('autorelogin') !== '0') {
-        AutoRelogin.enable();
+        AutoRelogin.enable(params.get('autologin') === '1');
     }
 
     // Human-behaviour layer for every bot: run-energy management + fatigue

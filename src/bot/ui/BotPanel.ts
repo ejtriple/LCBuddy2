@@ -1,9 +1,12 @@
 import { reader } from '../adapter/ClientAdapter.js';
 import type { BotHostImpl } from '../BotHost.js';
 import { ActionRouter } from '../input/ActionRouter.js';
+import { AutoRelogin } from '../runtime/AutoRelogin.js';
+import { Credentials } from '../runtime/Credentials.js';
 import { loadFromFile, loadFromUrl, type LoadResult } from '../runtime/loader.js';
 import { ScriptRegistry } from '../runtime/ScriptRegistry.js';
 import { ScriptRunner } from '../runtime/ScriptRunner.js';
+import { SettingsStore, type SettingDef } from '../runtime/Settings.js';
 
 /**
  * Live state panel + script controls. Plain DOM, no framework. The only
@@ -22,6 +25,7 @@ export default class BotPanel {
     private unsubLog: (() => void) | null = null;
     private loadUrlInput: HTMLInputElement;
     private loadStatus: HTMLElement;
+    private settingsBox: HTMLElement;
 
     private banner: HTMLElement;
     private stateCell: HTMLElement;
@@ -100,10 +104,24 @@ export default class BotPanel {
 
         this.loadStatus = el('div', 'lcb-load-status');
         script.appendChild(this.loadStatus);
-
         root.appendChild(script);
 
-        ScriptRegistry.onChange(() => this.rebuildSelector());
+        // settings: the selected script's tunable parameters
+        const settings = el('div', 'lcb-section');
+        settings.appendChild(sectionTitle('parameters'));
+        this.settingsBox = el('div', 'lcb-settings');
+        settings.appendChild(this.settingsBox);
+        root.appendChild(settings);
+
+        // re-render the parameter form when the selected script changes
+        this.scriptSelect.addEventListener('change', () => this.renderSettings());
+        ScriptRegistry.onChange(() => {
+            this.rebuildSelector();
+            this.renderSettings();
+        });
+
+        // credentials: saved locally so the bot can (re)log in itself
+        root.appendChild(this.buildCredentials());
 
         const status = el('div', 'lcb-section');
         status.appendChild(sectionTitle('status'));
@@ -137,6 +155,9 @@ export default class BotPanel {
         ScriptRunner.onChange(() => {
             this.renderScriptControls();
             this.renderLog();
+            // lock the parameter inputs while a script is active
+            const active = isActiveState(ScriptRunner.state);
+            this.settingsBox.querySelectorAll('input').forEach(i => ((i as HTMLInputElement).disabled = active));
         });
 
         // stat cells are created once (sparse over unused skill ids), updated in place
@@ -159,6 +180,7 @@ export default class BotPanel {
         host.addDrawListener(() => this.maybeRender());
         this.render();
         this.renderScriptControls();
+        this.renderSettings();
     }
 
     private async handleLoad(pending: Promise<LoadResult>): Promise<void> {
@@ -191,6 +213,123 @@ export default class BotPanel {
         if (ScriptRegistry.get(selected)) {
             this.scriptSelect.value = selected;
         }
+    }
+
+    /** Render the selected script's settingsSchema as an editable form. */
+    private renderSettings(): void {
+        this.settingsBox.replaceChildren();
+        const meta = ScriptRegistry.get(this.scriptSelect.value);
+        const schema = meta?.settingsSchema;
+        if (!meta || !schema || Object.keys(schema).length === 0) {
+            const none = el('div', 'lcb-dim');
+            none.textContent = '(no parameters)';
+            this.settingsBox.appendChild(none);
+            return;
+        }
+
+        const active = isActiveState(ScriptRunner.state);
+        for (const [key, def] of Object.entries(schema)) {
+            this.settingsBox.appendChild(this.buildSettingRow(meta.name, key, def, active));
+        }
+
+        const hint = el('div', 'lcb-dim');
+        hint.textContent = active ? 'stop the script to change parameters' : 'changes apply on next Start';
+        this.settingsBox.appendChild(hint);
+    }
+
+    private buildSettingRow(scriptName: string, key: string, def: SettingDef, active: boolean): HTMLElement {
+        const rowEl = el('div', 'lcb-setting');
+        const label = el('span', 'lcb-setting-label');
+        label.textContent = def.label ?? key;
+        if (def.help) {
+            label.title = def.help;
+        }
+
+        const current = SettingsStore.displayString(scriptName, key, def);
+        const input = document.createElement('input');
+        input.disabled = active;
+
+        if (def.type === 'boolean') {
+            input.type = 'checkbox';
+            input.checked = current === 'true' || current === '1' || current === 'yes';
+            input.addEventListener('change', () => SettingsStore.save(scriptName, key, input.checked ? 'true' : 'false'));
+            rowEl.classList.add('lcb-setting-bool');
+            rowEl.appendChild(input);
+            rowEl.appendChild(label);
+        } else {
+            input.className = 'lcb-input';
+            input.type = def.type === 'number' ? 'number' : 'text';
+            if (def.type === 'number') {
+                if (def.min !== undefined) {
+                    input.min = String(def.min);
+                }
+                if (def.max !== undefined) {
+                    input.max = String(def.max);
+                }
+            }
+            input.value = current;
+            input.addEventListener('change', () => SettingsStore.save(scriptName, key, input.value.trim()));
+            rowEl.appendChild(label);
+            rowEl.appendChild(input);
+        }
+
+        return rowEl;
+    }
+
+    private buildCredentials(): HTMLElement {
+        const sec = el('div', 'lcb-section');
+        sec.appendChild(sectionTitle('credentials'));
+        const saved = Credentials.get();
+
+        const userInput = document.createElement('input');
+        userInput.className = 'lcb-input';
+        userInput.type = 'text';
+        userInput.placeholder = 'username';
+        userInput.value = saved?.username ?? '';
+        sec.appendChild(labeled('user', userInput));
+
+        const passInput = document.createElement('input');
+        passInput.className = 'lcb-input';
+        passInput.type = 'password';
+        passInput.placeholder = 'password';
+        passInput.value = saved?.password ?? '';
+        sec.appendChild(labeled('pass', passInput));
+
+        const status = el('div', 'lcb-load-status');
+
+        const buttons = el('div', 'lcb-buttons');
+        button(buttons, 'Save', () => {
+            Credentials.save(userInput.value.trim(), passInput.value);
+            status.textContent = 'saved locally (plaintext)';
+            status.className = 'lcb-load-status lcb-load-ok';
+        });
+        button(buttons, 'Log in', () => {
+            const ok = AutoRelogin.loginNow();
+            status.textContent = ok ? 'logging in…' : 'save creds first / already ingame';
+            status.className = `lcb-load-status ${ok ? 'lcb-load-ok' : 'lcb-load-error'}`;
+        });
+        button(buttons, 'Clear', () => {
+            Credentials.clear();
+            userInput.value = '';
+            passInput.value = '';
+            status.textContent = 'cleared';
+            status.className = 'lcb-load-status';
+        });
+        sec.appendChild(buttons);
+
+        const autoRow = el('div', 'lcb-setting lcb-setting-bool');
+        const auto = document.createElement('input');
+        auto.type = 'checkbox';
+        auto.addEventListener('change', () => AutoRelogin.setAutoLogin(auto.checked));
+        const autoLabel = el('span', 'lcb-setting-label');
+        autoLabel.textContent = 'auto-login on title screen';
+        autoLabel.title = 'Unattended: log in by itself whenever sitting on the title screen with saved creds';
+        autoRow.appendChild(auto);
+        autoRow.appendChild(autoLabel);
+        sec.appendChild(autoRow);
+
+        sec.appendChild(status);
+        return sec;
     }
 
     private handleStart(): void {
@@ -362,4 +501,17 @@ function button(parent: HTMLElement, label: string, onClick: () => void): HTMLBu
     node.addEventListener('click', onClick);
     parent.appendChild(node);
     return node;
+}
+
+function labeled(label: string, input: HTMLElement): HTMLElement {
+    const rowEl = el('div', 'lcb-setting');
+    const key = el('span', 'lcb-setting-label');
+    key.textContent = label;
+    rowEl.appendChild(key);
+    rowEl.appendChild(input);
+    return rowEl;
+}
+
+function isActiveState(state: string): boolean {
+    return state === 'running' || state === 'paused' || state === 'stopping';
 }

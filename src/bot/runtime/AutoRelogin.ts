@@ -1,22 +1,27 @@
 import { actions, reader } from '../adapter/ClientAdapter.js';
 import { BotHost } from '../BotHost.js';
+import { Credentials, type Creds } from './Credentials.js';
 import { ScriptRunner } from './ScriptRunner.js';
 
-const FIRST_RETRY_MS = 6000;
-const RETRY_STEP_MS = 10000;
-const MAX_RETRY_MS = 30000;
+const FIRST_RETRY_MS = 6000; // delay before the first reconnect attempt
+const RECONNECT_INTERVAL_MS = 9000; // spacing between attempts (non-overlapping)
 const MAX_ATTEMPTS = 15;
 
 /**
- * Reconnect watchdog (Slice 7). While a script is running/paused it captures
- * the session credentials every frame (Client.logout() clears them), and on
- * an ingame -> title transition it pauses the run, retries the client's own
- * login with backoff (the server rejects "already online" for ~10s after a
- * drop), and resumes once the scene is rebuilt. Host-side: runs off the
- * frame hook, not inside any script context.
+ * Login keeper (Slice 7 + credential store). While ingame it captures the
+ * live session credentials (Client.logout() clears them); on a drop to the
+ * title screen it logs back in with backoff (the server rejects "already
+ * online" for ~10s) and resumes the running script. Credentials fall back to
+ * the locally-saved ones (Credentials), so it works even on a fresh page or
+ * after the in-memory creds were wiped.
+ *
+ * With auto-login enabled (panel toggle / ?autologin=1) it also logs in from
+ * the title screen unprompted whenever saved credentials exist — for fully
+ * unattended operation. Host-side: runs off the frame hook.
  */
 class AutoReloginImpl {
     private enabled = false;
+    private autoLogin = false;
     private username = '';
     private password = '';
 
@@ -26,13 +31,34 @@ class AutoReloginImpl {
     private attempts = 0;
     private nextAttemptAt = 0;
 
-    enable(): void {
+    enable(autoLogin = false): void {
+        this.autoLogin = this.autoLogin || autoLogin;
         if (this.enabled) {
             return;
         }
-
         this.enabled = true;
         BotHost.addFrameListener(() => this.onFrame());
+    }
+
+    setAutoLogin(on: boolean): void {
+        this.autoLogin = on;
+    }
+
+    /** Best credentials: the live session's, else the locally-saved ones. */
+    private creds(): Creds | null {
+        if (this.username.length > 0) {
+            return { username: this.username, password: this.password };
+        }
+        return Credentials.get();
+    }
+
+    /** Explicit login (panel "Log in" button): log in now if on the title screen. */
+    loginNow(): boolean {
+        const c = this.creds();
+        if (!c || reader.ingame()) {
+            return false;
+        }
+        return actions.login(c.username, c.password);
     }
 
     private scriptActive(): boolean {
@@ -40,56 +66,61 @@ class AutoReloginImpl {
         return state === 'running' || state === 'paused';
     }
 
-    private onFrame(): void {
-        const ingame = reader.ingame();
+    private log(level: 'info' | 'warn' | 'error', msg: string): void {
+        ScriptRunner.ctx?.addLog(level, msg);
+        if (!ScriptRunner.ctx) {
+            console.log(`[lcbuddy] ${msg}`);
+        }
+    }
 
-        if (ingame) {
-            const creds = actions.loginCredentials();
-            if (creds.username.length > 0) {
-                this.username = creds.username;
-                this.password = creds.password;
+    private onFrame(): void {
+        if (reader.ingame()) {
+            const live = actions.loginCredentials();
+            if (live.username.length > 0) {
+                this.username = live.username;
+                this.password = live.password;
             }
 
-            if (this.reconnecting) {
-                if (reader.sceneState() === 2) {
-                    ScriptRunner.ctx?.addLog('info', `auto-relogin: back ingame as '${this.username}' after ${this.attempts} attempt(s)`);
-                    if (this.wePaused) {
-                        ScriptRunner.resume();
-                    }
-                    this.reconnecting = false;
-                    this.wePaused = false;
+            if (this.reconnecting && reader.sceneState() === 2) {
+                this.log('info', `auto-relogin: back ingame as '${this.username}' after ${this.attempts} attempt(s)`);
+                if (this.wePaused) {
+                    ScriptRunner.resume();
                 }
+                this.reconnecting = false;
+                this.wePaused = false;
+                this.attempts = 0;
             }
 
             this.wasIngame = true;
             return;
         }
 
-        // not ingame
+        // --- on the title screen ---
+        const c = this.creds();
+        // re-login if a script was running (mid-session drop) OR auto-login is
+        // on and we have saved credentials
+        const wantLogin = c !== null && (this.autoLogin || this.scriptActive() || this.reconnecting);
+
         if (this.wasIngame) {
             this.wasIngame = false;
-
-            if (this.scriptActive() && this.username.length > 0) {
+            if (wantLogin) {
                 this.reconnecting = true;
                 this.attempts = 0;
                 this.nextAttemptAt = performance.now() + FIRST_RETRY_MS;
-
                 if (ScriptRunner.state === 'running') {
                     ScriptRunner.pause();
                     this.wePaused = true;
                 }
-                ScriptRunner.ctx?.addLog('warn', `auto-relogin: disconnected — retrying as '${this.username}'`);
+                this.log('warn', `disconnected — logging back in as '${c?.username}'`);
             }
+        } else if (wantLogin && !this.reconnecting) {
+            // fresh title screen (e.g. page load) with saved creds + auto-login
+            this.reconnecting = true;
+            this.attempts = 0;
+            this.nextAttemptAt = performance.now();
         }
 
-        if (!this.reconnecting) {
-            return;
-        }
-
-        if (!this.scriptActive()) {
-            // user stopped the script while we were reconnecting — stand down
-            this.reconnecting = false;
-            this.wePaused = false;
+        if (!this.reconnecting || !c) {
             return;
         }
 
@@ -98,16 +129,19 @@ class AutoReloginImpl {
         }
 
         if (this.attempts >= MAX_ATTEMPTS) {
-            ScriptRunner.ctx?.addLog('error', `auto-relogin: giving up after ${MAX_ATTEMPTS} attempts`);
+            this.log('error', `auto-login: giving up after ${MAX_ATTEMPTS} attempts`);
             this.reconnecting = false;
             return;
         }
 
         this.attempts++;
-        const backoff = Math.min(FIRST_RETRY_MS + this.attempts * RETRY_STEP_MS, MAX_RETRY_MS);
-        this.nextAttemptAt = performance.now() + backoff;
-        ScriptRunner.ctx?.addLog('info', `auto-relogin: attempt ${this.attempts}/${MAX_ATTEMPTS}`);
-        actions.login(this.username, this.password);
+        // flat spacing: wide enough that a login handshake fully completes (or
+        // fails) before the next attempt — overlapping login() calls stomp on
+        // each other's connection and never finish. Also clears the server's
+        // ~10s already-online window within a couple of tries.
+        this.nextAttemptAt = performance.now() + RECONNECT_INTERVAL_MS;
+        this.log('info', `auto-login: attempt ${this.attempts}/${MAX_ATTEMPTS} as '${c.username}'`);
+        actions.login(c.username, c.password);
     }
 }
 

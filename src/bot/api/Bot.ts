@@ -1,4 +1,5 @@
 import { bus, type EventMap } from '../events/EventBus.js';
+import { SettingsBag } from '../runtime/Settings.js';
 
 /**
  * Script-facing base classes (RuneMate shape). Scripts subclass one of
@@ -7,6 +8,13 @@ import { bus, type EventMap } from '../events/EventBus.js';
 export abstract class AbstractBot {
     /** Wall-clock ms between loop() iterations when loop() returns void. */
     loopDelay = 600;
+
+    /**
+     * Resolved parameters for this run (from the manifest's settingsSchema,
+     * overlaid with panel edits and URL overrides). Empty until the runner
+     * injects it just before onStart. Read with this.settings.bool('x') etc.
+     */
+    settings: SettingsBag = new SettingsBag({});
 
     /**
      * Input mode for this script: 'direct' (default, byte-identical packets

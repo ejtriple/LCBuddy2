@@ -3,6 +3,7 @@ import { ActionRouter } from '../input/ActionRouter.js';
 import { Scheduler } from './Scheduler.js';
 import { ScriptAborted, ScriptContext } from './ScriptContext.js';
 import type { ScriptMeta } from './ScriptRegistry.js';
+import { SettingsBag, SettingsStore } from './Settings.js';
 
 /**
  * Lifecycle of the (single) active script run.
@@ -35,6 +36,10 @@ class ScriptRunnerImpl {
         const ctx = new ScriptContext();
         const bot = meta.create();
         bot.bindLog(msg => ctx.addLog('info', msg));
+        // resolve this run's parameters (schema default <- saved <- URL)
+        if (meta.settingsSchema) {
+            bot.settings = new SettingsBag(SettingsStore.resolve(meta.name, meta.settingsSchema));
+        }
 
         this.ctx = ctx;
         this.bot = bot;
