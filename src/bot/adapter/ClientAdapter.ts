@@ -840,6 +840,21 @@ export const reader = {
  * approach logic and packet bytes are exactly what a human click produces.
  */
 export const actions = {
+    /** Current title-screen/session credentials (empty after logout). */
+    loginCredentials(): { username: string; password: string } {
+        return { username: raw?.loginUser ?? '', password: raw?.loginPass ?? '' };
+    },
+
+    /** Drive the client's own login flow (auto-relogin path). */
+    login(username: string, password: string): boolean {
+        if (!raw || raw.ingame) {
+            return false;
+        }
+
+        void raw.login(username, password, false);
+        return true;
+    },
+
     /**
      * Dispatch a minimenu action with explicit params through a scratch menu
      * slot. Returns false when the client isn't attached/ingame.

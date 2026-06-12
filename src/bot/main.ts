@@ -4,6 +4,8 @@ import { BotHost } from './BotHost.js';
 import { ActionRouter } from './input/ActionRouter.js';
 import { VirtualInput } from './input/VirtualInput.js';
 import { Navigator } from './nav/Navigator.js';
+import { installAbi } from './runtime/abi.js';
+import { AutoRelogin } from './runtime/AutoRelogin.js';
 import { ScriptRegistry } from './runtime/ScriptRegistry.js';
 import { ScriptRunner } from './runtime/ScriptRunner.js';
 import BotPanel from './ui/BotPanel.js';
@@ -41,7 +43,16 @@ if (typeof document !== 'undefined' && document.getElementById('canvas')) {
         new Overlay(overlayCanvas);
     }
 
+    // The stable script-facing ABI: externally-compiled scripts bind to
+    // globalThis.__lcbuddy through the @lcbuddy/api shim (ADR-0004).
+    installAbi();
+
+    // Auto-relogin on disconnect while a script is active (Slice 7);
+    // disable with bot.html?autorelogin=0
+    if (params.get('autorelogin') !== '0') {
+        AutoRelogin.enable();
+    }
+
     // DevTools handle (works because this bundle never mangles names).
-    // The stable script-facing ABI (globalThis.__lcbuddy) lands in Slice 7.
     (globalThis as Record<string, unknown>).lcbuddy = { client, host: BotHost, runner: ScriptRunner, registry: ScriptRegistry, reader, navigator: Navigator, vinput: VirtualInput, router: ActionRouter };
 }

@@ -18,6 +18,7 @@ the complete set of touch points. If an upstream merge breaks the bot, the break
 | H8 | config edit | `eslint.config.ts`: appended `src/bot/` import/DOM fence blocks (marked) | trivial conflicts only |
 | H9 | config edit | `package.json`: added `build:bot` / `build:bot:dev` scripts + `playwright-core` devDep | trivial conflicts only |
 | H10 | doc replace | `README.md` rewritten as LCBuddy2's front door | trivial conflicts only (take ours, fold upstream notes in) |
+| H13 | config edit (Slice 7) | `tsconfig.json`: added `exclude` for `packages/`+`templates/` (they have their own tsconfigs) | trivial conflicts only |
 | H11 | adapter call (Slice 6) | synthetic input calls the protected `GameShell` handlers `mouseDown(x,y,e)` / `mouseUp(x,y,e)` / `pointerMove(x,y,e)` directly (not DOM events) — they read only `e.button` and otherwise touch `mouseX/Y`, `nextMouseClick*`, `idleTimer` exactly as the real listeners | any of these handlers renamed, or `mouseDown` starts reading more of the event than `.button`, or the `mouseClick*` latch in `GameShell.run()` (~186) changes |
 | H12 | adapter write (Slice 6) | synthetic keyboard writes `keyHeld[ch]` + the `keyQueue`/`keyQueueWritePos` ring directly, mirroring `GameShell.onkeydown` (arrows = ch 1-4 → camera; ch>4 → ring) | `keyHeld` indexing for arrows (1=left,2=right,3=up,4=down) changes, or the ring write math (`& 0x7f`) changes (GameShell ~471) |
 

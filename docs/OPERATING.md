@@ -171,7 +171,31 @@ grant it).
 
 ## 8. Writing your own bot
 
-Until external loading lands (Slice 7), scripts live in-tree:
+Two ways: **out-of-tree** against the typed `@lcbuddy/api` package (recommended — no client
+rebuild), or in-tree as a built-in.
+
+### Out-of-tree (recommended)
+
+```sh
+cp -r templates/script-template ~/my-bot && cd ~/my-bot
+# edit package.json's @lcbuddy/api path to point at <repo>/packages/lcbuddy-api, then:
+bun install && bun run build        # -> dist/bot.js
+```
+
+In the panel: **Load file…** → `dist/bot.js` (or serve it and use **Load URL**). The script shows
+up in the selector marked `⇪`. Hot reload: `bun run watch` + re-click Load after each change
+(stop the script first; the loader refuses to swap a running one). Your entry module must
+`export default defineBot({ name, create, ... })`. Full rules and a working example:
+[templates/script-template/README.md](../templates/script-template/README.md); the complete
+typed surface is `packages/lcbuddy-api/index.d.ts`.
+
+Loaded scripts are **trusted code** — no sandbox. Load only what you wrote or read.
+
+Auto-relogin is on by default on `bot.html` (disable with `?autorelogin=0`): if the session drops
+to the title screen while a script is running, the client pauses the script, logs back in with
+the captured credentials (retrying past the ~10s already-online window), and resumes.
+
+### In-tree (built-ins)
 
 1. Create `src/bot/scripts/MyBot.ts`:
 

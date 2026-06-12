@@ -1,6 +1,7 @@
 import { reader } from '../adapter/ClientAdapter.js';
 import type { BotHostImpl } from '../BotHost.js';
 import { ActionRouter } from '../input/ActionRouter.js';
+import { loadFromFile, loadFromUrl, type LoadResult } from '../runtime/loader.js';
 import { ScriptRegistry } from '../runtime/ScriptRegistry.js';
 import { ScriptRunner } from '../runtime/ScriptRunner.js';
 
@@ -19,6 +20,8 @@ export default class BotPanel {
     private scriptStatus: HTMLElement;
     private logBox: HTMLElement;
     private unsubLog: (() => void) | null = null;
+    private loadUrlInput: HTMLInputElement;
+    private loadStatus: HTMLElement;
 
     private banner: HTMLElement;
     private stateCell: HTMLElement;
@@ -67,7 +70,40 @@ export default class BotPanel {
         script.appendChild(buttons);
 
         this.scriptStatus = row(script, 'status');
+
+        // Slice 7: load external scripts (URL with cache-busting reload, or
+        // a local file). Trusted code, no sandbox.
+        const loadRow = el('div', 'lcb-buttons');
+        this.loadUrlInput = document.createElement('input');
+        this.loadUrlInput.className = 'lcb-input';
+        this.loadUrlInput.type = 'text';
+        this.loadUrlInput.placeholder = 'script URL (dist/bot.js)';
+        loadRow.appendChild(this.loadUrlInput);
+        button(loadRow, 'Load URL', () => void this.handleLoad(loadFromUrl(this.loadUrlInput.value.trim())));
+        script.appendChild(loadRow);
+
+        const fileRow = el('div', 'lcb-buttons');
+        const filePick = document.createElement('input');
+        filePick.type = 'file';
+        filePick.accept = '.js,.mjs';
+        filePick.style.display = 'none';
+        filePick.addEventListener('change', () => {
+            const file = filePick.files?.[0];
+            if (file) {
+                void this.handleLoad(loadFromFile(file));
+            }
+            filePick.value = '';
+        });
+        button(fileRow, 'Load file…', () => filePick.click());
+        fileRow.appendChild(filePick);
+        script.appendChild(fileRow);
+
+        this.loadStatus = el('div', 'lcb-load-status');
+        script.appendChild(this.loadStatus);
+
         root.appendChild(script);
+
+        ScriptRegistry.onChange(() => this.rebuildSelector());
 
         const status = el('div', 'lcb-section');
         status.appendChild(sectionTitle('status'));
@@ -123,6 +159,38 @@ export default class BotPanel {
         host.addDrawListener(() => this.maybeRender());
         this.render();
         this.renderScriptControls();
+    }
+
+    private async handleLoad(pending: Promise<LoadResult>): Promise<void> {
+        this.loadStatus.textContent = 'loading…';
+        this.loadStatus.className = 'lcb-load-status';
+
+        const result = await pending;
+        if (result.ok) {
+            this.loadStatus.textContent = `loaded '${result.name}'`;
+            this.loadStatus.className = 'lcb-load-status lcb-load-ok';
+            if (result.name && !this.scriptSelect.disabled) {
+                this.scriptSelect.value = result.name;
+            }
+        } else {
+            this.loadStatus.textContent = `load failed: ${result.error}`;
+            this.loadStatus.className = 'lcb-load-status lcb-load-error';
+        }
+    }
+
+    private rebuildSelector(): void {
+        const selected = this.scriptSelect.value;
+        this.scriptSelect.replaceChildren();
+        for (const meta of ScriptRegistry.list()) {
+            const option = document.createElement('option');
+            option.value = meta.name;
+            option.textContent = meta.origin ? `${meta.name} ⇪` : meta.name;
+            option.title = `${meta.description}${meta.origin ? ` (${meta.origin})` : ''}`;
+            this.scriptSelect.appendChild(option);
+        }
+        if (ScriptRegistry.get(selected)) {
+            this.scriptSelect.value = selected;
+        }
     }
 
     private handleStart(): void {

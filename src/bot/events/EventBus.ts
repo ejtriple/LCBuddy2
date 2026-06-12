@@ -52,6 +52,10 @@ type Listener<K extends keyof EventMap> = (payload: EventMap[K]) => void;
 class EventBusImpl {
     private listeners = new Map<keyof EventMap, Set<Listener<keyof EventMap>>>();
 
+    off<K extends keyof EventMap>(event: K, cb: Listener<K>): void {
+        this.listeners.get(event)?.delete(cb as Listener<keyof EventMap>);
+    }
+
     on<K extends keyof EventMap>(event: K, cb: Listener<K>): () => void {
         let set = this.listeners.get(event);
         if (!set) {

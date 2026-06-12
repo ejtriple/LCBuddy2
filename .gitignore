@@ -7,3 +7,7 @@ private.pem
 public.pem
 
 .idea
+
+# nested packages (templates/ and packages/ manage their own deps)
+node_modules/
+templates/*/dist/

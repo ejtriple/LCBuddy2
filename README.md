@@ -44,12 +44,14 @@ gotcha (new accounts are tutorial-locked) and everything else an operator needs.
 | 2 | Script runtime (Execution, abort/pause, base classes) | done |
 | 3 | Direct interaction, queries, ChickenKiller | done |
 | 4 | HUD readers, event bus, Woodcutter | done |
-| 5 | Navigation / web-walking | in progress |
-| 6 | Humanization / synthetic input | planned |
-| 7 | External script authoring (`@lcbuddy/api`) | planned |
+| 5 | Navigation / web-walking | done |
+| 6 | Humanization / synthetic input | done |
+| 7 | External script authoring (`@lcbuddy/api`) | done |
 
-Built-in scripts so far: `DebugBot`, `ChickenKiller`, `Woodcutter` (plus `CrashTestBot` for the
-error firewall). Until Slice 7 lands, custom scripts are added in-tree — see the operating manual.
+Built-in scripts: `DebugBot`, `ChickenKiller`, `Woodcutter`, `NavDemo` (plus `CrashTestBot` for
+the error firewall). Custom scripts are authored out-of-tree against
+[`@lcbuddy/api`](packages/lcbuddy-api) and loaded from the panel — start from
+[templates/script-template](templates/script-template).
 
 ## Documentation
 

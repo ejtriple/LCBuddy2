@@ -82,6 +82,12 @@ export interface RawClient {
     ptype0: number;
     tcpIn(): Promise<boolean>;
 
+    // login state for auto-relogin (Slice 7). NOTE: Client.logout() clears
+    // loginUser/loginPass, so credentials are captured while still ingame.
+    loginUser: string;
+    loginPass: string;
+    login(username: string, password: string, reconnect: boolean): Promise<void>;
+
     // ---- synthetic input (Slice 6) ----
 
     // GameShell mouse state + the protected handlers the DOM listeners call.
@@ -182,6 +188,9 @@ export const SELF_TEST = [
     'tryMove',
     'ptype0',
     'tcpIn',
+    'loginUser',
+    'loginPass',
+    'login',
     'idleTimer',
     'mouseX',
     'mouseY',
