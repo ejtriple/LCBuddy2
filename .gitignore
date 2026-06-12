@@ -11,3 +11,4 @@ public.pem
 # nested packages (templates/ and packages/ manage their own deps)
 node_modules/
 templates/*/dist/
+desktop/dist/

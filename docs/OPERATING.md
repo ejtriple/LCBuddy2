@@ -94,6 +94,28 @@ mode yet; rerun the script and hard-refresh the browser (Cmd-Shift-R). Use
 If your server uses a regenerated RSA key (stock Lost City servers don't), build with
 `LOGIN_RSAN=<modulus> LOGIN_RSAE=<exponent> ./tools/deploy-local.sh`.
 
+## 3a. Desktop client (no background throttling)
+
+Running the client in a **browser tab** that you switch away from triggers
+Chromium's background throttling: the 50fps game loop drops to ~1fps, the bot
+starves, and the game replays at 2–5× when you refocus. To run it unattended,
+use the Electron desktop shell instead — it disables that throttling
+(`backgroundThrottling: false`) and holds full speed while hidden/minimized:
+
+```sh
+cd desktop && bun install      # once
+bun run start                  # window against http://localhost:8888
+bun run start -- --server=https://your-host   # or LCB_SERVER=…
+```
+
+It loads the same `bot.html` your engine serves (same-origin WS intact) — the
+panel, scripts, settings, saved credentials, cursor trail are all identical.
+`bun run package` builds a distributable. See [../desktop/README.md](../desktop/README.md).
+
+Independently, the bot itself is hardened against any frame stall (system
+sleep, throttling that slips through): the scheduler shifts pending waits
+across a large frame gap so they never falsely expire.
+
 ## 4. Play
 
 Browse **`http://localhost:8888/bot.html`**. The game canvas is on the left, the bot panel on the

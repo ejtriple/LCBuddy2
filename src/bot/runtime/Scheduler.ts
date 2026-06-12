@@ -2,6 +2,10 @@ import { BotHost } from '../BotHost.js';
 import { ScriptAborted, ScriptContext, type Waiter, type WaiterSpec } from './ScriptContext.js';
 
 const WATCHDOG_MS = 10000;
+/** A frame-to-frame gap this large means the page was throttled (background
+ *  tab) or the machine slept — normal frames are ~20ms apart. */
+const FRAME_GAP_MS = 1500;
+const NOMINAL_FRAME_MS = 20;
 
 /**
  * The frame pump. Scripts only make progress here: BotHost.onFrame() calls
@@ -21,6 +25,11 @@ class SchedulerImpl {
     /** When set and returning true, new loop iterations are withheld (human
      *  breaks). In-flight loops and Execution.* waiters are unaffected. */
     launchGate: (() => boolean) | null = null;
+
+    /** Times the frame-gap insurance fired (telemetry; see pump()). */
+    gapShifts = 0;
+
+    private lastPumpAt = 0;
 
     constructor() {
         BotHost.addFrameListener(() => this.pump());
@@ -43,14 +52,37 @@ class SchedulerImpl {
     }
 
     private pump(): void {
+        const now = performance.now();
+        const gap = this.lastPumpAt > 0 ? now - this.lastPumpAt : 0;
+        this.lastPumpAt = now;
+
         const ctx = this.active;
         if (!ctx || ctx.state !== 'running') {
             return;
         }
 
+        // Frame-gap insurance: wall-clock deadlines assume ~50fps frames. If
+        // the page was throttled (background browser tab) or the machine
+        // slept, the clock ran while no frames did — shift every pending
+        // deadline by the gap (same mechanic as pause/resume) so waits don't
+        // falsely expire and the catch-up burst doesn't mis-time the script.
+        if (gap > FRAME_GAP_MS) {
+            const shift = gap - NOMINAL_FRAME_MS;
+            for (const waiter of ctx.waiters) {
+                if (waiter.kind === 'time') {
+                    waiter.dueAt += shift;
+                } else if (waiter.kind === 'cond' && waiter.timeoutAt !== null) {
+                    waiter.timeoutAt += shift;
+                }
+            }
+            ctx.nextLoopAt += shift;
+            ctx.progress();
+            this.gapShifts++;
+            ctx.addLog('warn', `frame gap of ${(gap / 1000).toFixed(1)}s (throttled tab or system sleep) — shifted timers to compensate`);
+        }
+
         // resolve due waiters (cond waiters evaluate against the state this
         // frame just produced)
-        const now = performance.now();
         const tick = BotHost.tickCount;
         const still: Waiter[] = [];
 
