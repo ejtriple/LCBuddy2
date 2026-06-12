@@ -1,4 +1,5 @@
 import { reader } from './adapter/ClientAdapter.js';
+import { Humanizer } from './behavior/Humanizer.js';
 import BotClient from './BotClient.js';
 import { BotHost } from './BotHost.js';
 import { ActionRouter } from './input/ActionRouter.js';
@@ -53,6 +54,12 @@ if (typeof document !== 'undefined' && document.getElementById('canvas')) {
         AutoRelogin.enable();
     }
 
+    // Human-behaviour layer for every bot: run-energy management + fatigue
+    // breaks. Disable with bot.html?humanize=0
+    if (params.get('humanize') !== '0') {
+        Humanizer.enable();
+    }
+
     // DevTools handle (works because this bundle never mangles names).
-    (globalThis as Record<string, unknown>).lcbuddy = { client, host: BotHost, runner: ScriptRunner, registry: ScriptRegistry, reader, navigator: Navigator, vinput: VirtualInput, router: ActionRouter };
+    (globalThis as Record<string, unknown>).lcbuddy = { client, host: BotHost, runner: ScriptRunner, registry: ScriptRegistry, reader, navigator: Navigator, vinput: VirtualInput, router: ActionRouter, humanizer: Humanizer };
 }

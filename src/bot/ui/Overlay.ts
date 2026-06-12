@@ -1,10 +1,12 @@
 import { BotHost } from '../BotHost.js';
 import { ScriptRunner } from '../runtime/ScriptRunner.js';
+import { drawCursorTrail } from './CursorTrail.js';
 
 /**
- * Owns the transparent overlay canvas stacked on the game canvas. Calls the
- * running script's onPaint(ctx) after every client redraw — bots draw stats
- * without ever touching Pix2D.
+ * Owns the transparent overlay canvas stacked on the game canvas. Each redraw
+ * it paints the synthetic-cursor trail (so you can watch the mouse sim) and
+ * then the running script's onPaint(ctx) — bots draw stats without ever
+ * touching Pix2D.
  */
 export default class Overlay {
     private readonly ctx2d: CanvasRenderingContext2D | null;
@@ -24,9 +26,20 @@ export default class Overlay {
 
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        const bot = ScriptRunner.bot;
+        // cursor trail draws under the script's overlay, always while a script
+        // is active (not just when the bot defines onPaint)
         const state = ScriptRunner.state;
-        if (!bot?.onPaint || (state !== 'running' && state !== 'paused')) {
+        const active = state === 'running' || state === 'paused';
+        if (active) {
+            try {
+                drawCursorTrail(ctx);
+            } catch (err) {
+                console.error('[lcbuddy] cursor trail error', err);
+            }
+        }
+
+        const bot = ScriptRunner.bot;
+        if (!bot?.onPaint || !active) {
             return;
         }
 

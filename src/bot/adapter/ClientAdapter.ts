@@ -535,6 +535,40 @@ export const reader = {
         return out;
     },
 
+    /**
+     * The run on/off toggle buttons in the `controls` sidebar interface,
+     * resolved at runtime. The controls root is found via its "Auto retaliate"
+     * label (com_7); the run buttons are com_4 (off) / com_5 (on) — graphic
+     * select buttons that pushvar option_run (verified in controls.if).
+     * Returns null if the layout moved (self-test catches it).
+     */
+    runControls(): { onComId: number; offComId: number } | null {
+        if (cachedRunControls !== undefined) {
+            return cachedRunControls;
+        }
+
+        cachedRunControls = null;
+        for (const root of IfType.list) {
+            if (!root?.children) {
+                continue;
+            }
+            const hasRetaliate = root.children.some(c => IfType.list[c]?.text === 'Auto retaliate');
+            if (!hasRetaliate || root.children.length <= 5) {
+                continue;
+            }
+
+            const off = root.children[4];
+            const on = root.children[5];
+            // sanity: both should be graphic buttons (ComponentType.TYPE_GRAPHIC === 4)
+            if (IfType.list[on]?.buttonType !== undefined && IfType.list[off] !== undefined) {
+                cachedRunControls = { onComId: on, offComId: off };
+            }
+            break;
+        }
+
+        return cachedRunControls;
+    },
+
     /** Scene-local -> world tile (current plane), or null when detached. */
     toWorld(lx: number, lz: number): WorldTile | null {
         if (!raw) {
@@ -932,6 +966,16 @@ export const actions = {
      */
     ifButton(comId: number): boolean {
         return actions.menuAction(MiniMenuAction.IF_BUTTON, 0, 0, comId);
+    },
+
+    /** Toggle run mode on/off via the controls interface (idempotent). */
+    setRun(on: boolean): boolean {
+        const controls = reader.runControls();
+        if (!controls) {
+            return false;
+        }
+
+        return actions.ifButton(on ? controls.onComId : controls.offComId);
     }
 };
 
@@ -1135,6 +1179,8 @@ function loopCycleNow(): number {
 }
 
 const cachedTabInvComId = new Map<number, number>();
+// undefined = not yet resolved; null = resolved-but-absent (don't rescan every frame)
+let cachedRunControls: { onComId: number; offComId: number } | null | undefined = undefined;
 
 /**
  * A tab's item container: a TYPE_INV child of the sidebar interface at
