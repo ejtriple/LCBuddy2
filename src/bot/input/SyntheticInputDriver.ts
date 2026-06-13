@@ -114,6 +114,23 @@ export default class SyntheticInputDriver implements InputDriver {
         );
     }
 
+    // Use-item-on-X is a two-gesture sequence (select the held item, then
+    // click the target through the live "Use X -> …" menu) that needs its own
+    // resolution + validation. Until that lands, fail honestly rather than
+    // silently dispatch a direct packet (ADR-0003). Processing bots run in
+    // direct mode, where these are fully supported.
+    useItemOnLoc(useObjId: number, _useSlot: number, _useComId: number, lx: number, lz: number, typecode: number): Promise<boolean> {
+        return this.enqueue(() => { this.fail(`use ${useObjId} on loc ${typecode} at (${lx},${lz}) — not supported in synthetic mode`); return Promise.resolve(false); });
+    }
+
+    useItemOnNpc(useObjId: number, _useSlot: number, _useComId: number, index: number): Promise<boolean> {
+        return this.enqueue(() => { this.fail(`use ${useObjId} on npc ${index} — not supported in synthetic mode`); return Promise.resolve(false); });
+    }
+
+    useItemOnItem(useObjId: number, _useSlot: number, _useComId: number, targetObjId: number, _targetSlot: number, _targetComId: number): Promise<boolean> {
+        return this.enqueue(() => { this.fail(`use ${useObjId} on item ${targetObjId} — not supported in synthetic mode`); return Promise.resolve(false); });
+    }
+
     continueDialog(): Promise<boolean> {
         return this.enqueue(() => {
             if (reader.chatContinueComId() === -1) {

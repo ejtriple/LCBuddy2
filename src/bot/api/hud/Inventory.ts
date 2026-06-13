@@ -1,6 +1,7 @@
 import type { InvItemSnapshot } from '../../adapter/ClientAdapter.js';
 import { reader } from '../../adapter/ClientAdapter.js';
 import { ActionRouter } from '../../input/ActionRouter.js';
+import { Loc, Npc } from '../entities/index.js';
 
 export class InvItem {
     constructor(readonly snap: InvItemSnapshot) {}
@@ -35,6 +36,27 @@ export class InvItem {
         }
 
         return false;
+    }
+
+    /**
+     * Use this item on another item, a scenery loc, or an npc — the
+     * "use X with Y" interaction behind every processing skill (knife→logs,
+     * bar→anvil, ess→altar, herb→vial). Returns false if a loc target is
+     * off-scene.
+     */
+    useOn(target: InvItem | Loc | Npc): boolean | Promise<boolean> {
+        const driver = ActionRouter.driver;
+        if (target instanceof InvItem) {
+            return driver.useItemOnItem(this.snap.id, this.snap.slot, this.snap.comId, target.snap.id, target.snap.slot, target.snap.comId);
+        }
+        if (target instanceof Npc) {
+            return driver.useItemOnNpc(this.snap.id, this.snap.slot, this.snap.comId, target.snap.index);
+        }
+        const local = reader.toLocal(target.snap.tile.x, target.snap.tile.z);
+        if (!local) {
+            return false;
+        }
+        return driver.useItemOnLoc(this.snap.id, this.snap.slot, this.snap.comId, local.lx, local.lz, target.snap.typecode);
     }
 }
 

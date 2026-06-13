@@ -17,6 +17,12 @@ export interface InputDriver {
     heldOp(objId: number, slot: number, comId: number, op: number): boolean | Promise<boolean>;
     /** Component-defined item button (bank withdraw/deposit etc.). */
     invButton(objId: number, slot: number, comId: number, op: number): boolean | Promise<boolean>;
+    /** Use a held item on a scenery loc (smithing anvil, runecraft altar, …). */
+    useItemOnLoc(useObjId: number, useSlot: number, useComId: number, lx: number, lz: number, typecode: number): boolean | Promise<boolean>;
+    /** Use a held item on an npc (e.g. payment/quest steps). */
+    useItemOnNpc(useObjId: number, useSlot: number, useComId: number, index: number): boolean | Promise<boolean>;
+    /** Use a held item on another held item (fletch knife→logs, herb→vial). */
+    useItemOnItem(useObjId: number, useSlot: number, useComId: number, targetObjId: number, targetSlot: number, targetComId: number): boolean | Promise<boolean>;
     walk(lx: number, lz: number): boolean | Promise<boolean>;
     continueDialog(): boolean | Promise<boolean>;
 }

@@ -42,6 +42,25 @@ export default class DirectInputDriver implements InputDriver {
         return actions.menuAction(INV_BUTTONS[op - 1], objId, slot, comId);
     }
 
+    // USEHELD_START first selects the held item (sets objComId / objSelectedSlot
+    // / objSelectedComId on the client); the follow-up action reads that state
+    // and emits the OPLOCU / OPNPCU / OPHELDU packet.
+    private select(useObjId: number, useSlot: number, useComId: number): boolean {
+        return actions.menuAction(MiniMenuAction.USEHELD_START, useObjId, useSlot, useComId);
+    }
+
+    useItemOnLoc(useObjId: number, useSlot: number, useComId: number, lx: number, lz: number, typecode: number): boolean {
+        return this.select(useObjId, useSlot, useComId) && actions.menuAction(MiniMenuAction.USEHELD_ONLOC, typecode, lx, lz);
+    }
+
+    useItemOnNpc(useObjId: number, useSlot: number, useComId: number, index: number): boolean {
+        return this.select(useObjId, useSlot, useComId) && actions.menuAction(MiniMenuAction.USEHELD_ONNPC, index, 0, 0);
+    }
+
+    useItemOnItem(useObjId: number, useSlot: number, useComId: number, targetObjId: number, targetSlot: number, targetComId: number): boolean {
+        return this.select(useObjId, useSlot, useComId) && actions.menuAction(MiniMenuAction.USEHELD_ONHELD, targetObjId, targetSlot, targetComId);
+    }
+
     walk(lx: number, lz: number): boolean {
         return actions.walkTo(lx, lz);
     }

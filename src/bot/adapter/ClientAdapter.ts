@@ -546,6 +546,50 @@ export const reader = {
     },
 
     /**
+     * The products in an open "What would you like to make?" skill-multi menu.
+     * Each product is a model component (if_setobject -> model1Type 4) paired,
+     * positionally, with its run of Make X/10/5/1 resume buttons. Lets a script
+     * pick a product by name and a quantity by value instead of guessing comIds.
+     */
+    makeProducts(): { obj: number; name: string; buttons: { qty: number; comId: number }[] }[] {
+        if (!raw || raw.chatModalId === -1) {
+            return [];
+        }
+
+        const objs: number[] = [];
+        const buttons: { qty: number; comId: number }[] = [];
+        const visit = (comId: number): void => {
+            const com = IfType.list[comId];
+            if (!com) {
+                return;
+            }
+            // a product icon: if_setobject stamps model1Type=4 with the obj id
+            if (com.model1Type === 4 && com.model1Id > 0) {
+                objs.push(com.model1Id);
+            }
+            if (com.buttonType === ButtonType.BUTTON_OK && com.buttonText) {
+                const m = /make\s+(x|\d+)/i.exec(com.buttonText);
+                if (m) {
+                    buttons.push({ qty: m[1].toLowerCase() === 'x' ? -1 : parseInt(m[1], 10), comId });
+                }
+            }
+            if (com.children) {
+                for (const child of com.children) {
+                    visit(child);
+                }
+            }
+        };
+        visit(raw.chatModalId);
+
+        // buttons arrive in product order, 4 per product (X, 10, 5, 1)
+        const products: { obj: number; name: string; buttons: { qty: number; comId: number }[] }[] = [];
+        for (let i = 0; i < objs.length; i++) {
+            products.push({ obj: objs[i], name: ObjType.list(objs[i]).name ?? '', buttons: buttons.slice(i * 4, i * 4 + 4) });
+        }
+        return products;
+    },
+
+    /**
      * The run on/off toggle buttons in the `controls` sidebar interface,
      * resolved at runtime. The controls root is found via its "Auto retaliate"
      * label (com_7); the run buttons are com_4 (off) / com_5 (on) — graphic
