@@ -25,6 +25,11 @@ export const Game = {
         return reader.inCombat();
     },
 
+    /** Local player is playing a primary animation (mining/chopping/fishing/…). */
+    animating(): boolean {
+        return reader.selfAnim() !== -1;
+    },
+
     /** Server ticks observed since the client booted (~600ms each). */
     tick(): number {
         return BotHost.tickCount;

@@ -355,6 +355,11 @@ export interface BotManifestInput {
     name: string;
     description?: string;
     version?: string;
+    /** Skill/group the script belongs to (e.g. "Mining"). Becomes a filter
+     *  chip in the script library; grouped under "Other" when omitted. */
+    category?: string;
+    /** Free-form labels for search/filtering in the library (e.g. "f2p"). */
+    tags?: string[];
     settingsSchema?: SettingsSchema;
     create(): AbstractBot;
 }

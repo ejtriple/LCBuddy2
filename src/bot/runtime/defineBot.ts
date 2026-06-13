@@ -8,6 +8,10 @@ export interface BotManifest {
     name: string;
     description?: string;
     version?: string;
+    /** Primary category for the library filter (usually a skill). */
+    category?: string;
+    /** Free-form tags for filtering/search. */
+    tags?: string[];
     settingsSchema?: SettingsSchema;
     create(): AbstractBot;
 }
@@ -38,6 +42,8 @@ export function registerScript(manifest: BotManifestInput, origin?: string): Scr
         name: tagged.name,
         description: tagged.description ?? '',
         version: tagged.version,
+        category: tagged.category,
+        tags: tagged.tags,
         origin,
         settingsSchema: tagged.settingsSchema,
         create: tagged.create

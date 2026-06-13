@@ -5,6 +5,10 @@ export interface ScriptMeta {
     name: string;
     description: string;
     version?: string;
+    /** Primary category for the library filter (usually a skill). */
+    category?: string;
+    /** Free-form tags for filtering/search (f2p, members, banking, afk, ...). */
+    tags?: string[];
     /** Where the script came from: undefined = built-in, else URL/file label. */
     origin?: string;
     /** Tunable parameters shown in the panel and resolvable from the URL. */

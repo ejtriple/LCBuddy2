@@ -7,6 +7,7 @@ import { loadFromFile, loadFromUrl, type LoadResult } from '../runtime/loader.js
 import { ScriptRegistry } from '../runtime/ScriptRegistry.js';
 import { ScriptRunner } from '../runtime/ScriptRunner.js';
 import { SettingsStore, type SettingDef } from '../runtime/Settings.js';
+import ScriptLibrary from './ScriptLibrary.js';
 
 /**
  * Live state panel + script controls. Plain DOM, no framework. The only
@@ -16,7 +17,10 @@ import { SettingsStore, type SettingDef } from '../runtime/Settings.js';
 export default class BotPanel {
     private host: BotHostImpl;
 
-    private scriptSelect: HTMLSelectElement;
+    private library!: ScriptLibrary;
+    private selectedScript = '';
+    private scriptName!: HTMLElement;
+    private browseBtn!: HTMLButtonElement;
     private startBtn: HTMLButtonElement;
     private pauseBtn: HTMLButtonElement;
     private stopBtn: HTMLButtonElement;
@@ -56,16 +60,15 @@ export default class BotPanel {
         const script = el('div', 'lcb-section');
         script.appendChild(sectionTitle('script'));
 
-        this.scriptSelect = document.createElement('select');
-        this.scriptSelect.className = 'lcb-select';
-        for (const meta of ScriptRegistry.list()) {
-            const option = document.createElement('option');
-            option.value = meta.name;
-            option.textContent = meta.name;
-            option.title = meta.description;
-            this.scriptSelect.appendChild(option);
-        }
-        script.appendChild(this.scriptSelect);
+        // the library modal is the picker; the panel shows the current choice
+        this.library = new ScriptLibrary(name => this.selectScript(name));
+        this.selectedScript = ScriptRegistry.list()[0]?.name ?? '';
+
+        const pick = el('div', 'lcb-buttons');
+        this.scriptName = el('span', 'lcb-current-script');
+        pick.appendChild(this.scriptName);
+        this.browseBtn = button(pick, 'Browse…', () => this.library.open());
+        script.appendChild(pick);
 
         const buttons = el('div', 'lcb-buttons');
         this.startBtn = button(buttons, 'Start', () => this.handleStart());
@@ -113,10 +116,8 @@ export default class BotPanel {
         settings.appendChild(this.settingsBox);
         root.appendChild(settings);
 
-        // re-render the parameter form when the selected script changes
-        this.scriptSelect.addEventListener('change', () => this.renderSettings());
         ScriptRegistry.onChange(() => {
-            this.rebuildSelector();
+            this.ensureSelection();
             this.renderSettings();
         });
 
@@ -179,6 +180,7 @@ export default class BotPanel {
 
         host.addDrawListener(() => this.maybeRender());
         this.render();
+        this.ensureSelection();
         this.renderScriptControls();
         this.renderSettings();
     }
@@ -191,8 +193,8 @@ export default class BotPanel {
         if (result.ok) {
             this.loadStatus.textContent = `loaded '${result.name}'`;
             this.loadStatus.className = 'lcb-load-status lcb-load-ok';
-            if (result.name && !this.scriptSelect.disabled) {
-                this.scriptSelect.value = result.name;
+            if (result.name && !isActiveState(ScriptRunner.state)) {
+                this.selectScript(result.name);
             }
         } else {
             this.loadStatus.textContent = `load failed: ${result.error}`;
@@ -200,25 +202,30 @@ export default class BotPanel {
         }
     }
 
-    private rebuildSelector(): void {
-        const selected = this.scriptSelect.value;
-        this.scriptSelect.replaceChildren();
-        for (const meta of ScriptRegistry.list()) {
-            const option = document.createElement('option');
-            option.value = meta.name;
-            option.textContent = meta.origin ? `${meta.name} ⇪` : meta.name;
-            option.title = `${meta.description}${meta.origin ? ` (${meta.origin})` : ''}`;
-            this.scriptSelect.appendChild(option);
+    /** Set the active script choice (from the library or a load) and refresh. */
+    private selectScript(name: string): void {
+        if (!ScriptRegistry.get(name)) {
+            return;
         }
-        if (ScriptRegistry.get(selected)) {
-            this.scriptSelect.value = selected;
+        this.selectedScript = name;
+        this.scriptName.textContent = name;
+        this.renderSettings();
+        this.renderScriptControls();
+    }
+
+    /** Keep the selection valid as the registry changes (loads/hot-reload). */
+    private ensureSelection(): void {
+        if (!ScriptRegistry.get(this.selectedScript)) {
+            this.selectScript(ScriptRegistry.list()[0]?.name ?? '');
+        } else {
+            this.scriptName.textContent = this.selectedScript;
         }
     }
 
     /** Render the selected script's settingsSchema as an editable form. */
     private renderSettings(): void {
         this.settingsBox.replaceChildren();
-        const meta = ScriptRegistry.get(this.scriptSelect.value);
+        const meta = ScriptRegistry.get(this.selectedScript);
         const schema = meta?.settingsSchema;
         if (!meta || !schema || Object.keys(schema).length === 0) {
             const none = el('div', 'lcb-dim');
@@ -333,7 +340,7 @@ export default class BotPanel {
     }
 
     private handleStart(): void {
-        const meta = ScriptRegistry.get(this.scriptSelect.value);
+        const meta = ScriptRegistry.get(this.selectedScript);
         if (!meta) {
             return;
         }
@@ -367,7 +374,7 @@ export default class BotPanel {
         this.pauseBtn.disabled = !(state === 'running' || state === 'paused');
         this.pauseBtn.textContent = state === 'paused' ? 'Resume' : 'Pause';
         this.stopBtn.disabled = !active || state === 'stopping';
-        this.scriptSelect.disabled = active;
+        this.browseBtn.disabled = active;
 
         const ctx = ScriptRunner.ctx;
         if (!ctx) {

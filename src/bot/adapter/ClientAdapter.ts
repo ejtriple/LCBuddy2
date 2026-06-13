@@ -224,6 +224,16 @@ export const reader = {
         };
     },
 
+    /**
+     * The local player's active primary animation id, or -1 when idle. Skills
+     * like mining/woodcutting/fishing keep this >= 0 while the action loops, so
+     * it's a skill-agnostic "I'm making progress" signal even before the first
+     * item drops.
+     */
+    selfAnim(): number {
+        return raw?.localPlayer?.primaryAnim ?? -1;
+    },
+
     energy(): number {
         return raw?.runenergy ?? 0;
     },

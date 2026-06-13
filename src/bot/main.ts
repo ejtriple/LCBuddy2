@@ -1,4 +1,4 @@
-import { reader } from './adapter/ClientAdapter.js';
+import { actions, reader } from './adapter/ClientAdapter.js';
 import { Humanizer } from './behavior/Humanizer.js';
 import BotClient from './BotClient.js';
 import { BotHost } from './BotHost.js';
@@ -63,5 +63,5 @@ if (typeof document !== 'undefined' && document.getElementById('canvas')) {
     }
 
     // DevTools handle (works because this bundle never mangles names).
-    (globalThis as Record<string, unknown>).lcbuddy = { client, host: BotHost, runner: ScriptRunner, registry: ScriptRegistry, reader, navigator: Navigator, vinput: VirtualInput, router: ActionRouter, humanizer: Humanizer, scheduler: Scheduler };
+    (globalThis as Record<string, unknown>).lcbuddy = { client, host: BotHost, runner: ScriptRunner, registry: ScriptRegistry, reader, actions, navigator: Navigator, vinput: VirtualInput, router: ActionRouter, humanizer: Humanizer, scheduler: Scheduler };
 }
