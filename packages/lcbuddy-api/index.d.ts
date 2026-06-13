@@ -157,6 +157,12 @@ export class InvItem {
     actions(): string[];
     /** Held op by name, e.g. item.interact('Bury'). */
     interact(action: string): boolean | Promise<boolean>;
+    /**
+     * Use this item on another item, a scenery loc, or an npc — the "use X
+     * with Y" behind every processing skill (knife→logs, bar→anvil, ess→altar).
+     * Returns false if a loc target is off-scene.
+     */
+    useOn(target: InvItem | Loc | Npc): boolean | Promise<boolean>;
 }
 
 export const Inventory: {
@@ -208,6 +214,19 @@ export const ChatDialog: {
     canContinue(): boolean;
     /** Press continue and wait for the dialog page to change. */
     continue(): Promise<boolean>;
+    /** Selectable option lines in the current dialog (text only). */
+    options(): string[];
+    /** Pick the option whose text contains `match` (or the first). */
+    chooseOption(match?: string): Promise<boolean>;
+    /** A "What would you like to make?" skill-multi menu is open. */
+    isMakeMenu(): boolean;
+    /** Product names offered by the open make menu. */
+    makeProducts(): string[];
+    /**
+     * In a make menu, pick the product whose name contains `match` (or the
+     * first) at the largest fixed quantity offered (prefer 10).
+     */
+    make(match?: string): Promise<boolean>;
 };
 
 // ---- movement ----
