@@ -3,6 +3,7 @@ import { GATHERING_SETTINGS } from './GatheringBot.js';
 import { PROCESSING_SETTINGS } from './ProcessingBot.js';
 import { ScriptRegistry } from '../runtime/ScriptRegistry.js';
 import AgilityBot from './AgilityBot.js';
+import ChaosDruidKiller, { SETTINGS as CHAOSDRUID_SETTINGS } from './ChaosDruidKiller.js';
 import ChickenKiller, { SETTINGS as CHICKEN_SETTINGS } from './ChickenKiller.js';
 import CrashTestBot from './CrashTestBot.js';
 import DebugBot from './DebugBot.js';
@@ -21,6 +22,15 @@ ScriptRegistry.register({
     tags: ['f2p', 'lumbridge', 'bones', 'feathers', 'afk'],
     settingsSchema: CHICKEN_SETTINGS,
     create: () => new ChickenKiller()
+});
+
+ScriptRegistry.register({
+    name: 'ChaosDruidKiller',
+    description: 'Kills Chaos druids in the Edgeville dungeon, loots herbs/law runes, banks them',
+    category: 'Combat',
+    tags: ['members', 'wilderness', 'edgeville', 'herbs', 'banking'],
+    settingsSchema: CHAOSDRUID_SETTINGS,
+    create: () => new ChaosDruidKiller()
 });
 
 ScriptRegistry.register({

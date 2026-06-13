@@ -37,13 +37,21 @@ export const Bank = {
 
     /** Deposit every slot (uses the highest Deposit op available per item). */
     async depositInventory(): Promise<void> {
+        await Bank.depositAllMatching(() => true);
+    },
+
+    /**
+     * Deposit every pack slot whose item name matches `match` (Deposit-all per
+     * slot), leaving everything else — e.g. bank the loot but keep food/gear.
+     */
+    async depositAllMatching(match: (name: string) => boolean): Promise<void> {
         for (let guard = 0; guard < 32; guard++) {
             const items = reader.bankSideItems();
-            if (items.length === 0) {
+            const item = items.find(i => i.name !== null && match(i.name));
+            if (!item) {
                 return;
             }
 
-            const item = items[0];
             const allOp = item.ops.findIndex(op => op?.toLowerCase().includes('all'));
             const op = allOp !== -1 ? allOp + 1 : bestOpIndex(item.ops);
             if (op === -1) {
@@ -51,7 +59,7 @@ export const Bank = {
             }
 
             ActionRouter.driver.invButton(item.id, item.slot, item.comId, op);
-            await Execution.delayUntil(() => reader.bankSideItems().length < items.length || (reader.bankSideItems()[0]?.count ?? 0) < item.count, 2000);
+            await Execution.delayUntil(() => !reader.bankSideItems().some(i => i.slot === item.slot && i.id === item.id), 2000);
         }
     }
 };
