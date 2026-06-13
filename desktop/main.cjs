@@ -24,8 +24,12 @@ function serverUrl() {
 
 function createWindow() {
     const win = new BrowserWindow({
-        width: 1140,
-        height: 780,
+        // wide enough that the game (765:503 + a 330px panel) scales up to
+        // roughly fill the height instead of sitting in black margins
+        width: 1480,
+        height: 820,
+        minWidth: 900,
+        minHeight: 560,
         useContentSize: true,
         backgroundColor: '#000000',
         title: 'LCBuddy2',

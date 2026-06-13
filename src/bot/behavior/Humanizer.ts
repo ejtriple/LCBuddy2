@@ -74,8 +74,10 @@ class HumanizerImpl {
     }
 
     private scriptActive(): boolean {
-        const s = ScriptRunner.state;
-        return s === 'running' || s === 'paused';
+        // only while actually running — a user pause should be fully idle (no
+        // run toggling, no break scheduling). Breaks themselves keep the state
+        // 'running' (they gate the scheduler), so they still work.
+        return ScriptRunner.state === 'running';
     }
 
     private bindOnce(): void {

@@ -18,33 +18,42 @@
 
         body {
             margin: 0;
-            overflow: auto;
+            overflow: hidden;
             background-color: black;
         }
 
+        /* full-viewport row: game fills the left, panel fixed on the right */
         #lcb-root {
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 10px;
-            min-height: 100vh;
+            align-items: stretch;
+            gap: 8px;
+            height: 100vh;
             box-sizing: border-box;
         }
 
         #game-wrap {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* JS sizes this to the largest 765:503 box that fits #game-wrap;
+           both canvases fill it, so they scale together and stay aligned. */
+        #game-stage {
             position: relative;
             width: 765px;
             height: 503px;
-            flex: none;
         }
 
-        #game-wrap canvas {
+        #game-stage canvas {
             position: absolute;
             top: 0;
             left: 0;
-            width: 765px;
-            height: 503px;
+            width: 100%;
+            height: 100%;
             display: block;
             user-select: none;
             outline: none;
@@ -61,10 +70,12 @@
 
         #bot-panel {
             width: 330px;
-            flex: none;
+            flex: 0 0 330px;
+            height: 100vh;
+            overflow-y: auto;
+            box-sizing: border-box;
             background: #111;
-            border: 1px solid #333;
-            border-radius: 4px;
+            border-left: 1px solid #333;
             padding: 10px;
             font-family: ui-monospace, Menlo, Consolas, monospace;
             font-size: 12px;
@@ -293,10 +304,12 @@
 <body>
     <div id="lcb-root">
         <div id="game-wrap">
-            <canvas id="canvas" width="765" height="503">
-                Your browser is not capable of running our web client.
-            </canvas>
-            <canvas id="overlay" width="765" height="503"></canvas>
+            <div id="game-stage">
+                <canvas id="canvas" width="765" height="503">
+                    Your browser is not capable of running our web client.
+                </canvas>
+                <canvas id="overlay" width="765" height="503"></canvas>
+            </div>
         </div>
         <div id="bot-panel"></div>
     </div>
@@ -315,6 +328,24 @@
             ctx.textAlign = 'center';
             ctx.fillText('Loading...', canvas.width / 2, canvas.height / 2);
         }
+
+        // Scale the game (backing stays 765x503; the client maps mouse coords
+        // by the displayed size, so input stays correct) to the largest
+        // aspect-preserving box that fits the window. Kills the blank margins.
+        (function () {
+            const wrap = document.getElementById('game-wrap');
+            const stage = document.getElementById('game-stage');
+            function fit() {
+                const w = wrap.clientWidth;
+                const h = wrap.clientHeight;
+                if (w <= 0 || h <= 0) return;
+                const scale = Math.min(w / 765, h / 503);
+                stage.style.width = Math.floor(765 * scale) + 'px';
+                stage.style.height = Math.floor(503 * scale) + 'px';
+            }
+            window.addEventListener('resize', fit);
+            fit();
+        })();
     </script>
 
     <script type="module" src="./bot/botclient.js"></script>
